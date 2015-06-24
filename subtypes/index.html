@@ -1,0 +1,158 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title>Subtypes for Free!</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; }
+code > span.dt { color: #902000; }
+code > span.dv { color: #40a070; }
+code > span.bn { color: #40a070; }
+code > span.fl { color: #40a070; }
+code > span.ch { color: #4070a0; }
+code > span.st { color: #4070a0; }
+code > span.co { color: #60a0b0; font-style: italic; }
+code > span.ot { color: #007020; }
+code > span.al { color: #ff0000; font-weight: bold; }
+code > span.fu { color: #06287e; }
+code > span.er { color: #ff0000; font-weight: bold; }
+  </style>
+  <link rel="stylesheet" href="pandoc.css" type="text/css" />
+</head>
+<body>
+<div id="header">
+<h1 class="title">Subtypes for Free!<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a></h1>
+</div>
+<div id="TOC">
+<ul>
+<li><a href="#simple-types">Simple types</a></li>
+<li><a href="#wizards-and-warriors">Wizards and Warriors</a></li>
+<li><a href="#drawbacks-and-limitations">Drawbacks and Limitations</a></li>
+</ul>
+</div>
+<p>Sometimes it would be nice if a type system could automatically “do it’s best” to restrict what a value will be. For example, the type <code>Bool</code> is the compiler saying the value will either be <code>True</code> or <code>False</code>, but it doesn’t know which. What we want is the compiler to be able to be precise when possible, so instead of always saying <code>Bool</code> (or “I don’t know”), it could say <code>True</code>, <code>False</code>, or <code>Bool</code>. This post shows how GHC (and really any Hindley-Milner-based type system) already has this capability that can be exercised by using Church or Scott encodings of simple data types.</p>
+<pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE RankNTypes #-}</span>
+<span class="ot">{-# LANGUAGE ImpredicativeTypes #-}</span>
+<span class="kw">import qualified</span> <span class="dt">Data.Maybe</span> <span class="kw">as</span> <span class="dt">M</span>
+<span class="kw">import </span><span class="dt">Prelude</span> <span class="kw">hiding</span> (and, or, <span class="dt">Maybe</span>)
+<span class="kw">data</span> <span class="dt">Bottom</span>
+<span class="ot">bottom ::</span> <span class="dt">Bottom</span>
+bottom <span class="fu">=</span> error <span class="st">&quot;INCONCEIVABLE!&quot;</span></code></pre>
+<h1 id="simple-types">Simple types</h1>
+<p>Instead of the standard data constructors, we define church booleans. <code>True</code> and <code>False</code> are synonyms for the types inferred for <code>true</code> and <code>false</code>, respectively.</p>
+<pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">True</span> <span class="fu">=</span> forall a b <span class="fu">.</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> a
+<span class="ot">true ::</span> <span class="dt">True</span>
+true t f <span class="fu">=</span> t
+<span class="kw">type</span> <span class="dt">False</span> <span class="fu">=</span> forall a b <span class="fu">.</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b
+<span class="ot">false ::</span> <span class="dt">False</span>
+false t f <span class="fu">=</span> f</code></pre>
+<p>We can define logical <code>or</code> and <code>and</code>, leaving the types blank intentionally</p>
+<pre class="sourceCode literate haskell"><code class="sourceCode haskell">or a b <span class="fu">=</span> a true b 
+and a b <span class="fu">=</span> a b false</code></pre>
+<p>Some tests, showing us that GHC infers precise types</p>
+<pre class="sourceCode literate haskell"><code class="sourceCode haskell">test1 <span class="fu">=</span> true <span class="ot">`and` false ::</span> <span class="dt">False</span>
+test2 <span class="fu">=</span> true <span class="ot">`and` true ::</span> <span class="dt">True</span></code></pre>
+<p>This is in contrast with using standard booleans</p>
+<pre class="sourceCode literate haskell"><code class="sourceCode haskell">test3 <span class="fu">=</span> <span class="dt">True</span> <span class="fu">&amp;&amp;</span> <span class="dt">False</span><span class="ot"> ::</span> <span class="dt">Bool</span></code></pre>
+<p>We can create corresponding type for <code>Bool</code></p>
+<pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Boolean</span> <span class="fu">=</span> forall a <span class="fu">.</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a
+<span class="ot">showBoolean ::</span> <span class="dt">Boolean</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+showBoolean b <span class="fu">=</span> b <span class="st">&quot;true&quot;</span> <span class="st">&quot;false&quot;</span></code></pre>
+<p>Indeed, GHC will infer this type if we force it to unify <code>True</code> and <code>False</code>:</p>
+<pre class="sourceCode literate haskell"><code class="sourceCode haskell">g <span class="fu">=</span> [true,false]<span class="ot"> ::</span> [<span class="dt">Boolean</span>]</code></pre>
+<p>For product types, i.e. tuples, the encoding is as follows:</p>
+<pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Pair</span> a b <span class="fu">=</span> forall c <span class="fu">.</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> c
+pair a b p <span class="fu">=</span> p a b
+both <span class="fu">=</span> pair true false</code></pre>
+<p>We can encode combinations of product and sum types, e.g. <code>Maybe a</code>, in a data type, with the general type</p>
+<pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Maybe</span> a <span class="fu">=</span> forall b <span class="fu">.</span> b <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b</code></pre>
+<p>And the more precise types and their respective constructors:</p>
+<pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Just</span> a <span class="fu">=</span> forall b c <span class="fu">.</span> b <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> c
+<span class="ot">just ::</span> a <span class="ot">-&gt;</span> <span class="dt">Just</span> a
+just a n j <span class="fu">=</span> j a
+<span class="kw">type</span> <span class="dt">Nothing</span> <span class="fu">=</span> forall a b <span class="fu">.</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> a
+<span class="ot">nothing ::</span> <span class="dt">Nothing</span>
+nothing n j <span class="fu">=</span> n</code></pre>
+<p>We can use the more precise types to construct a version of <code>fromJust</code> that is total</p>
+<pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">fromJust ::</span> <span class="dt">Just</span> a <span class="ot">-&gt;</span> a
+fromJust p <span class="fu">=</span> p bottom id </code></pre>
+<p>Now, the following expression would create a type error:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">  typeError <span class="fu">=</span> fromJust (just <span class="dv">1</span>) <span class="fu">+</span> fromJust nothing</code></pre>
+<p>This is in contrast with using the partial function with the algebraic data types, which will typecheck the <code>typeError</code> example without complaint:</p>
+<pre class="sourceCode literate haskell"><code class="sourceCode haskell">runTimeError <span class="fu">=</span> M.fromJust (<span class="dt">Just</span> <span class="dv">1</span>) <span class="fu">+</span> M.fromJust <span class="dt">Nothing</span></code></pre>
+<h1 id="wizards-and-warriors">Wizards and Warriors</h1>
+<p>We now turn to a slightly more complex (and fun) example. We’ll try and implement <a href="http://ericlippert.com/2015/04/27/wizards-and-warriors-part-one/">Eric Lippert’s problem of trying to represent subtypes in game with wizards and warriors</a>. To summarize, want to describe the following types for a game:</p>
+<ul>
+<li>A weapon is a sword, a staff, or a dagger.</li>
+<li>A player is a warrior or a wizard.</li>
+<li>Every player has a weapon.</li>
+<li>A warrior can’t use a staff.</li>
+<li>A wizard can’t use a sword.</li>
+</ul>
+<p>We can translate these rules into our scott encoding as follows:</p>
+<pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Player</span> <span class="fu">=</span> forall a <span class="fu">.</span> (<span class="dt">NotSword</span> <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (<span class="dt">NotStaff</span> <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> a</code></pre>
+<p>A player is either a wizard, which has a dagger or staff, or a warrior, which has a dagger or sword.</p>
+<pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Wizard</span> <span class="fu">=</span> forall wiz war <span class="fu">.</span> (<span class="dt">NotSword</span> <span class="ot">-&gt;</span> wiz) <span class="ot">-&gt;</span> war <span class="ot">-&gt;</span> wiz
+<span class="ot">wizard ::</span> <span class="dt">NotSword</span> <span class="ot">-&gt;</span> <span class="dt">Wizard</span>
+wizard wpn wiz war <span class="fu">=</span> wiz wpn
+
+<span class="kw">type</span> <span class="dt">Warrior</span> <span class="fu">=</span> forall wiz war <span class="fu">.</span> wiz <span class="ot">-&gt;</span> (<span class="dt">NotStaff</span> <span class="ot">-&gt;</span> war) <span class="ot">-&gt;</span> war
+<span class="ot">warrior ::</span> <span class="dt">NotStaff</span> <span class="ot">-&gt;</span> <span class="dt">Warrior</span>
+warrior wpn wiz war <span class="fu">=</span> war wpn
+
+<span class="ot">showClass ::</span> <span class="dt">Player</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+showClass player <span class="fu">=</span> player (const <span class="st">&quot;wizard&quot;</span>) (const <span class="st">&quot;warrior&quot;</span>)
+
+headWizard,<span class="ot"> thiefWizard ::</span> <span class="dt">Wizard</span>
+headWizard <span class="fu">=</span> wizard staff 
+thiefWizard <span class="fu">=</span> wizard dagger</code></pre>
+<p>Now if we try and create a wizard with a sword: <code>wizard sword</code>, we’ll get a type error. The weapon is a simple sum type, similar to our <code>Boolean</code> type above.</p>
+<pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Weapon</span> <span class="fu">=</span> forall a <span class="fu">.</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a
+
+staff st dg sw <span class="fu">=</span> st
+dagger st dg sw <span class="fu">=</span> dg
+sword st dg sw <span class="fu">=</span> sw
+
+<span class="ot">showWeapon ::</span> <span class="dt">Weapon</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+showWeapon weapon <span class="fu">=</span>  weapon <span class="st">&quot;staff&quot;</span> <span class="st">&quot;dagger&quot;</span> <span class="st">&quot;sword&quot;</span></code></pre>
+<p>We don’t bother creating type synonyms for our constructors, as we’re more interested in the following types:</p>
+<pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">NotSword</span> <span class="fu">=</span> forall sw nsw <span class="fu">.</span> nsw <span class="ot">-&gt;</span> nsw <span class="ot">-&gt;</span> sw <span class="ot">-&gt;</span> nsw
+<span class="kw">type</span> <span class="dt">NotStaff</span> <span class="fu">=</span> forall st nst <span class="fu">.</span> st <span class="ot">-&gt;</span> nst <span class="ot">-&gt;</span> nst <span class="ot">-&gt;</span> nst</code></pre>
+<p>These let us express our subtypes exactly as needed.</p>
+<p>We can also write an accessor function to get the weapon from a player. Note that we leave the type signature out. If we were to add the naive signature <code>weapon :: Player -&gt; Weapon</code> we would lose some type inference power. For example, we would lose the fact that <code>weapon . warrior :: NotStaff</code>, and instead get <code>weapon . warrior :: Weapon</code>.</p>
+<pre class="sourceCode literate haskell"><code class="sourceCode haskell">weapon p <span class="fu">=</span> p id id</code></pre>
+<p>Letting GHC infer the most general type for <code>weapon</code>, when we check the type of <code>weapon . warrior</code>, we get <code>NotStaff -&gt; NotStaff</code>, as desired. Now we can write a function that only accepts warriors, which calls a function that depends on the type of the weapon being <code>NotStaff</code>.</p>
+<pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">spinToWin ::</span> <span class="dt">Warrior</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+spinToWin warrior <span class="fu">=</span> putStrLn <span class="fu">$</span> <span class="st">&quot;Warrior perform deadly spin for &quot;</span> <span class="fu">++</span>
+  (show <span class="fu">$</span> spinDamage <span class="fu">$</span> weapon warrior) <span class="fu">++</span> <span class="st">&quot; damage&quot;</span>
+
+<span class="ot">spinDamage ::</span> <span class="dt">NotStaff</span> <span class="ot">-&gt;</span> <span class="dt">Int</span>
+spinDamage w <span class="fu">=</span> w bottom <span class="dv">10</span> <span class="dv">20</span></code></pre>
+<h1 id="drawbacks-and-limitations">Drawbacks and Limitations</h1>
+<p>While we’ve achieved what Eric gave up on in his posts, it’s worth noting that using this technique as is has a huge cost: we’ve essentially given up much of basic type safety. Recall that we’ve been using synonyms everywhere. That means that GHC will happily typecheck</p>
+<pre class="sourceCode literate haskell"><code class="sourceCode haskell">weirdWizard <span class="fu">=</span> wizard (const true)<span class="ot"> ::</span> <span class="dt">Wizard</span></code></pre>
+<p>because <code>const true</code> and <code>dagger</code> are the same function (and the only function of that type).</p>
+<p>Even worse, because we left the type signature off of our <code>weapon</code> accessor to enable more precise type inference:</p>
+<pre class="sourceCode literate haskell"><code class="sourceCode haskell">nonsense <span class="fu">=</span> weapon<span class="ot"> sword ::</span> t <span class="ot">-&gt;</span> t</code></pre>
+<p>We almost certainly would want that to be a type failure, as it’s a pretty weird way to compute the identity function, and definitely not the intended use of the <code>weapon</code> function.</p>
+<p>We also can’t use typeclasses with these types in a meaningful way, e.g. write a Functor instance for our <code>Maybe</code> type.</p>
+<p>It is possible to recover some of this type safety with newtypes, as one could to prevent adding <code>Speed</code> and <code>Distance</code> type synonyms, but we’ll leave that for another day.</p>
+<p>We also can’t do recursive types, like lists, because of the occurrs check. There are potentially some ways around this using newtypes, but it would take some work and likely be fairly ugly.</p>
+<p>We also haven’t <em>proved</em> that our constructors and types all match up. That is, the type system has proved some things about them, but really we should be using parametricity to prove things like <code>Boolean</code> = {<code>true</code>, <code>false</code>}.</p>
+<p><a href="./hm_scott.lhs">This post is a literate haskell file compiled by pandoc.</a></p>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Terms and conditions may apply.<a href="#fnref1">↩</a></p></li>
+</ol>
+</div>
+</body>
+</html>

@@ -1,0 +1,232 @@
+\documentclass[]{article}
+\usepackage[a4paper, margin=1in]{geometry}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+    \usepackage{xltxtra,xunicode}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+  \newcommand{\euro}{€}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\ifxetex
+  \usepackage[setpagesize=false, % page size defined by xetex
+              unicode=false, % unicode breaks when used with xetex
+              xetex]{hyperref}
+\else
+  \usepackage[unicode=true]{hyperref}
+\fi
+\hypersetup{breaklinks=true,
+            bookmarks=true,
+            pdfauthor={George Stelle and Stephanie Forrest},
+            pdftitle={Subtypes for Free!},
+            colorlinks=true,
+            citecolor=blue,
+            urlcolor=blue,
+            linkcolor=magenta,
+            pdfborder={0 0 0}}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\newenvironment{Shaded}{}{}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{{#1}}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.56,0.13,0.00}{{#1}}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textit{{#1}}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{{#1}}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{{#1}}}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.02,0.16,0.49}{{#1}}}
+\newcommand{\RegionMarkerTok}[1]{{#1}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{{#1}}}}
+\newcommand{\NormalTok}[1]{{#1}}
+\usepackage[normalem]{ulem}
+% avoid problems with \sout in headers with hyperref:
+\pdfstringdefDisableCommands{\renewcommand{\sout}{}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+
+\title{Subtypes for Free!}
+\author{George Stelle and Stephanie Forrest}
+\date{}
+
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+\begin{document}
+\maketitle
+
+\section{Motivation}\label{motivation}
+
+It would sometimes be nice if a type system could be as precise as
+possible to restrict what a value will be. For example, the type
+\texttt{Bool} ensures a value will either be \texttt{true} or
+\texttt{false}, but it doesn't know which. What we want is the type
+system to be precise when possible, so instead of always saying
+\texttt{Bool} (or ``I don't know''), it could say \texttt{True},
+\texttt{False}, or \texttt{Bool}. In this example, \texttt{True} and
+\texttt{False} are \emph{subtypes} of \texttt{Bool}, i.e.~every value of
+type \texttt{True} is also of type \texttt{Bool}.
+
+\section{Existing Approaches}\label{existing-approaches}
+
+There is a significant literature on subtyping, mostly in the context of
+object-oriented (OO) languages. Indeed, subtyping in languages that
+combine OO features with functional features implement subtypes using
+objects \cite{scala, ocaml}. We are interested in subtyping without
+requiring all the language complexities introduced by OO constructs, and
+will see that doing so gives us some inference advantages.
+
+Generalized algebraic data types (GADTs) allow for a restricted form of
+subtyping as well. For example, the canonical example of
+\texttt{Expr\ Int} as separated from \texttt{Expr\ Bool} in a simple
+language with booleans and integers. Our approach subsumes GADTs, while
+adding extra flexibility in how we can represent subtypes.
+
+\section{Our Approach}\label{our-approach}
+
+Our approach is to use Scott encodings of algebraic data types, along
+with Hindley Milner type inference, to achieve a very general form of
+subtype polymorphism. We show how GHC can take advantage of this
+approach without modification by \sout{abusing} taking advantage of
+impredicative types.
+
+Scott encodings are encodings of algebraic data types that encode their
+own \texttt{case} destruction. For booleans, for example, the encoding
+is identical to Church encoding: \texttt{true\ t\ f\ =\ t}, and
+\texttt{false\ t\ f\ =\ f}.
+
+Our primary insight is that by wrapping the scott encodings in a
+\texttt{newtype}, and then carefully constraining the types, we can
+define types that represent arbitrary subsets of the constructors.
+
+One appealing thing about our approach is that it composes well. For
+example, we are not aware of any other subtyping scheme that is capable
+of inferring that
+
+\begin{Shaded}
+\begin{Highlighting}[]
+   \NormalTok{null}\OtherTok{ nil ::} \DataTypeTok{True}
+\end{Highlighting}
+\end{Shaded}
+
+where \texttt{null} checks if a list is empty and \texttt{nil} is the
+empty list.
+
+\section{An Example}\label{an-example}
+
+One application of subtyping is to prevent partial functions. Here we
+show how to use our approach to define a total version of the
+\texttt{fromJust} from the Haskell standard library.
+
+To achieve this, we define a subtypeable \texttt{Maybe}. The Scott
+encoding for \texttt{Maybe} takes two \emph{case} arguments, the first,
+\texttt{n}, corresponding to \texttt{nothing}, so it has no parameters,
+and the second, \texttt{j}, corresponding to \texttt{just\ a}, so it has
+one parameter of type \texttt{a}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+  \KeywordTok{newtype} \DataTypeTok{Maybe'} \NormalTok{a n j m }\FunctionTok{=} \DataTypeTok{Maybe} \NormalTok{(n }\OtherTok{->} \NormalTok{(a }\OtherTok{->} \NormalTok{j) }\OtherTok{->} \NormalTok{m)}
+  \KeywordTok{type} \DataTypeTok{Maybe} \NormalTok{a }\FunctionTok{=} \NormalTok{forall m}\FunctionTok{.} \DataTypeTok{Maybe'} \NormalTok{a m m m }
+  \KeywordTok{type} \DataTypeTok{Just} \NormalTok{a }\FunctionTok{=} \NormalTok{forall n j}\FunctionTok{.} \DataTypeTok{Maybe'} \NormalTok{a n j j}
+\OtherTok{  just ::} \NormalTok{a }\OtherTok{->} \DataTypeTok{Just} \NormalTok{a}
+  \NormalTok{just a }\FunctionTok{=} \DataTypeTok{Maybe} \FunctionTok{$} \NormalTok{\textbackslash{}n j }\OtherTok{->} \NormalTok{j a}
+  \KeywordTok{type} \DataTypeTok{Nothing} \FunctionTok{=} \NormalTok{forall a n j}\FunctionTok{.} \DataTypeTok{Maybe'} \NormalTok{a n j n}
+\OtherTok{  nothing ::} \DataTypeTok{Nothing}
+  \NormalTok{nothing }\FunctionTok{=} \DataTypeTok{Maybe} \FunctionTok{$} \NormalTok{\textbackslash{}n j }\OtherTok{->} \NormalTok{n}
+\end{Highlighting}
+\end{Shaded}
+
+For our \texttt{Maybe} type, we have a type like the standard
+\texttt{Data.Maybe} type in Haskell. In this case, similar to the
+\texttt{maybe} function from \texttt{Data.Maybe}, we don't know whether
+we have a value of type \texttt{Just} or a value of type
+\texttt{Nothing}, so we must ensure that the two cases return the same
+type. But if the compiler can infer that the value is of type
+\texttt{Just}, we don't care what the \texttt{n} cases type is, and only
+constrain the return type to be the same as the \texttt{Just} case
+\texttt{j}.
+
+With that in mind, we can write our total function, using a
+\texttt{Bottom} type with no values to convince ourselves that our
+function will never typecheck \texttt{fromJust} applied to a type that
+includes \texttt{Nothing}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{  fromJust ::} \DataTypeTok{Just} \NormalTok{a }\OtherTok{->} \NormalTok{a}
+  \NormalTok{fromJust (}\DataTypeTok{Maybe} \NormalTok{j) }\FunctionTok{=} \NormalTok{j bottom }\FunctionTok{$} \NormalTok{\textbackslash{}a}\OtherTok{->}\NormalTok{a}
+
+  \KeywordTok{data} \DataTypeTok{Bottom}
+  \NormalTok{bottom }\FunctionTok{=} \NormalTok{error }\StringTok{"impossible"}\OtherTok{ ::} \DataTypeTok{Bottom}
+\end{Highlighting}
+\end{Shaded}
+
+We can still define the partial version of \texttt{fromJust}, which like
+the one from the Haskell standard library, allows runtime failure.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{  partialFromJust ::} \DataTypeTok{Maybe} \NormalTok{a }\OtherTok{->} \NormalTok{a}
+  \NormalTok{partialFromJust (}\DataTypeTok{Maybe} \NormalTok{m) }\FunctionTok{=} \NormalTok{m (error }\StringTok{"partialFromJust Nothing"}\NormalTok{) }\FunctionTok{$} \NormalTok{\textbackslash{}a}\OtherTok{->}\NormalTok{a }
+\end{Highlighting}
+\end{Shaded}
+
+We have implemented more sophisticated examples, including recursive
+types, GADTs, and total versions of \texttt{head} and \texttt{tail}. For
+these, as well as an implementation of
+\href{http://ericlippert.com/2015/04/27/wizards-and-warriors-part-one/}{Eric
+Lippert's wizards and warriors example}, see:
+\href{http://cs.unm.edu/~stelleg/Scott/}{http://cs.unm.edu/\textasciitilde{}stelleg/scott/}.
+
+\section{Drawbacks}\label{drawbacks}
+
+Without language support, this approach is quite verbose and unwieldy.
+Furthermore, due to the nature of Scott encodings, the constructor
+definitions grow quadratically in size as a function of the number of
+constructors. Because of the large number of nested \texttt{forall}s,
+getting variable quantification right can also be quite difficult.
+
+\section{Future Work}\label{future-work}
+
+We are currently working on formalizing and verifying this approach in
+Coq using parametricity \cite{parametricity}. The burden of creating all
+of the necessary type synonyms could likely be lessened by some template
+Haskell. Further in the future, it would be interesting to see the ideas
+integrated as an extension to GHC.
+
+\end{document}
