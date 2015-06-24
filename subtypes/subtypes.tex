@@ -91,51 +91,32 @@
 
 \section{Motivation}\label{motivation}
 
-It would sometimes be nice if a type system could be as precise as
-possible to restrict what a value will be. For example, the type
-\texttt{Bool} ensures a value will either be \texttt{true} or
-\texttt{false}, but it doesn't know which. What we want is the type
-system to be precise when possible, so instead of always saying
-\texttt{Bool} (or ``I don't know''), it could say \texttt{True},
-\texttt{False}, or \texttt{Bool}. In this example, \texttt{True} and
+It would be nice if a type system could be as precise as possible to
+restrict what a value will be. In Haskell, for example, the type
+\texttt{Bool} ensures a value will either be \texttt{True} or
+\texttt{False}. What we want is the type system to be precise when
+possible, so instead of always inferring \texttt{Bool}, it could infer
+\texttt{True}, \texttt{False}, or \texttt{Bool}, where \texttt{True} and
 \texttt{False} are \emph{subtypes} of \texttt{Bool}, i.e.~every value of
-type \texttt{True} is also of type \texttt{Bool}.
+type \texttt{True} is also of type \texttt{Bool}. This preciseness can
+ensure the prevention of run-time errors by removing partial functions,
+like \texttt{head} and \texttt{tail}.
 
 \section{Existing Approaches}\label{existing-approaches}
 
 There is a significant literature on subtyping, mostly in the context of
 object-oriented (OO) languages. Indeed, subtyping in languages that
 combine OO features with functional features implement subtypes using
-objects \cite{scala, ocaml}. We are interested in subtyping without
-requiring all the language complexities introduced by OO constructs, and
-will see that doing so gives us some inference advantages.
+objects \cite{odersky2004overview, leroy2014ocaml}.
 
-Generalized algebraic data types (GADTs) allow for a restricted form of
-subtyping as well. For example, the canonical example of
-\texttt{Expr\ Int} as separated from \texttt{Expr\ Bool} in a simple
-language with booleans and integers. Our approach subsumes GADTs, while
-adding extra flexibility in how we can represent subtypes.
+Generalized algebraic data types (GADTs) enable a limited form of
+subtyping as well \cite{fluet2006phantom}. For example, in the canonical
+example of a simple language with booleans and integers,
+\texttt{Expr Int} are distinct from \texttt{Expr Bool}, while both are
+subtypes of \texttt{Expr a}.
 
-\section{Our Approach}\label{our-approach}
-
-Our approach is to use Scott encodings of algebraic data types, along
-with Hindley Milner type inference, to achieve a very general form of
-subtype polymorphism. We show how GHC can take advantage of this
-approach without modification by \sout{abusing} taking advantage of
-impredicative types.
-
-Scott encodings are encodings of algebraic data types that encode their
-own \texttt{case} destruction. For booleans, for example, the encoding
-is identical to Church encoding: \texttt{true\ t\ f\ =\ t}, and
-\texttt{false\ t\ f\ =\ f}.
-
-Our primary insight is that by wrapping the scott encodings in a
-\texttt{newtype}, and then carefully constraining the types, we can
-define types that represent arbitrary subsets of the constructors.
-
-One appealing thing about our approach is that it composes well. For
-example, we are not aware of any other subtyping scheme that is capable
-of inferring that
+For both the OO and the GADT approaches, we are not aware of any capable
+of inferring:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -146,17 +127,45 @@ of inferring that
 where \texttt{null} checks if a list is empty and \texttt{nil} is the
 empty list.
 
+\section{Our Approach}\label{our-approach}
+
+We use Scott encoding of algebraic data types, along with the Glasgow
+Haskell Compiler's (GHC's) type inference, to achieve a very general
+form of subtype polymorphism. We show how GHC can take advantage of this
+approach without modification by \sout{abusing} taking full advantage of
+rank-n types.
+
+Scott encodings are implementations of algebraic data types that encode
+their own \texttt{case} destruction using lambda expressions. Our
+primary insight is that by wrapping the Scott encodings in a
+\texttt{newtype}, and then carefully constraining the types, we can
+define types that represent arbitrary subsets of the constructors.
+
+This allows us to type the following examples, among others:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{   true ::} \DataTypeTok{True}
+   \NormalTok{and true}\OtherTok{ false ::} \DataTypeTok{False}
+\OtherTok{   head ::} \DataTypeTok{Cons} \NormalTok{a }\OtherTok{->} \NormalTok{a}
+\OtherTok{   fromJust ::} \DataTypeTok{Just} \NormalTok{a }\OtherTok{->} \NormalTok{a}
+   \NormalTok{null}\OtherTok{ nil ::} \DataTypeTok{True}
+\end{Highlighting}
+\end{Shaded}
+
 \section{An Example}\label{an-example}
 
-One application of subtyping is to prevent partial functions. Here we
-show how to use our approach to define a total version of the
-\texttt{fromJust} from the Haskell standard library.
+One application of subtyping is to runtime failures. Here we show how to
+use our approach to define a total version of \texttt{fromJust} from the
+Haskell standard library.
 
-To achieve this, we define a subtypeable \texttt{Maybe}. The Scott
+To achieve this, we define a \texttt{Maybe} type as a replacement for
+Haskell's \texttt{data Maybe a = Just a \textbar{} Nothing}. The Scott
 encoding for \texttt{Maybe} takes two \emph{case} arguments, the first,
-\texttt{n}, corresponding to \texttt{nothing}, so it has no parameters,
-and the second, \texttt{j}, corresponding to \texttt{just\ a}, so it has
-one parameter of type \texttt{a}.
+of type \texttt{n}, corresponding to \texttt{nothing}, so it has no
+parameters, and the second, of type \texttt{a -\textgreater{} j},
+corresponding to \texttt{just a}, so it has one parameter of type
+\texttt{a}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -171,17 +180,16 @@ one parameter of type \texttt{a}.
 \end{Highlighting}
 \end{Shaded}
 
-For our \texttt{Maybe} type, we have a type like the standard
-\texttt{Data.Maybe} type in Haskell. In this case, similar to the
-\texttt{maybe} function from \texttt{Data.Maybe}, we don't know whether
-we have a value of type \texttt{Just} or a value of type
-\texttt{Nothing}, so we must ensure that the two cases return the same
-type. But if the compiler can infer that the value is of type
-\texttt{Just}, we don't care what the \texttt{n} cases type is, and only
-constrain the return type to be the same as the \texttt{Just} case
-\texttt{j}.
+Our \texttt{Maybe} type is analogous to the standard \texttt{Data.Maybe}
+type in Haskell. In this case, similar to the \texttt{maybe} function
+from \texttt{Data.Maybe}, we don't know whether we have a value of type
+\texttt{Just} or a value of type \texttt{Nothing}, so we must ensure
+that the two cases return the same type. But if the compiler can infer
+that the value is of type \texttt{Just}, we don't care what the
+\texttt{n} cases type is, and only constrain the return type to be the
+same as the \texttt{Just} case \texttt{j}.
 
-With that in mind, we can write our total function, using a
+With that in mind, we can write our total \texttt{fromJust}, using a
 \texttt{Bottom} type with no values to convince ourselves that our
 function will never typecheck \texttt{fromJust} applied to a type that
 includes \texttt{Nothing}.
@@ -207,26 +215,15 @@ the one from the Haskell standard library, allows runtime failure.
 \end{Shaded}
 
 We have implemented more sophisticated examples, including recursive
-types, GADTs, and total versions of \texttt{head} and \texttt{tail}. For
-these, as well as an implementation of
-\href{http://ericlippert.com/2015/04/27/wizards-and-warriors-part-one/}{Eric
-Lippert's wizards and warriors example}, see:
-\href{http://cs.unm.edu/~stelleg/Scott/}{http://cs.unm.edu/\textasciitilde{}stelleg/scott/}.
+types, GADTs, and total versions of \texttt{head} and \texttt{tail},
+available at \url{http://cs.unm.edu/~stelleg/scott/}.
 
-\section{Drawbacks}\label{drawbacks}
+\section{Conclusion}\label{conclusion}
 
-Without language support, this approach is quite verbose and unwieldy.
-Furthermore, due to the nature of Scott encodings, the constructor
-definitions grow quadratically in size as a function of the number of
-constructors. Because of the large number of nested \texttt{forall}s,
-getting variable quantification right can also be quite difficult.
-
-\section{Future Work}\label{future-work}
-
-We are currently working on formalizing and verifying this approach in
-Coq using parametricity \cite{parametricity}. The burden of creating all
-of the necessary type synonyms could likely be lessened by some template
-Haskell. Further in the future, it would be interesting to see the ideas
-integrated as an extension to GHC.
+We have shown how to attain powerful form of subtyping in Haskell using
+basic extensions. The resulting subtypes allow us to define total
+versions of existing partial functions, preventing runtime errors. We
+are currently working on formalizing and verifying this approach using
+parametricity \cite{wadler1989theorems}.
 
 \end{document}

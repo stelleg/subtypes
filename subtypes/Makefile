@@ -6,4 +6,8 @@ index.html: hm_scott.lhs
 subtypes.pdf: hm_scott.lhs
 	pandoc -s --template=default.latex -S hm_scott.lhs -o subtypes.tex
 	pdflatex subtypes.tex
+	bibtex subtypes
 	pdflatex subtypes.tex
+	pdflatex subtypes.tex
+	grep -v '>' hm_scott.lhs | wc -w
+	mupdf subtypes.pdf
