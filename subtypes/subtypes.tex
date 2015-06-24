@@ -112,8 +112,8 @@ objects \cite{odersky2004overview, leroy2014ocaml}.
 Generalized algebraic data types (GADTs) enable a limited form of
 subtyping as well \cite{fluet2006phantom}. For example, in the canonical
 example of a simple language with booleans and integers,
-\texttt{Expr Int} are distinct from \texttt{Expr Bool}, while both are
-subtypes of \texttt{Expr a}.
+\texttt{Expr\ Int} are distinct from \texttt{Expr\ Bool}, while both are
+subtypes of \texttt{Expr\ a}.
 
 For both the OO and the GADT approaches, we are not aware of any capable
 of inferring:
@@ -160,11 +160,11 @@ use our approach to define a total version of \texttt{fromJust} from the
 Haskell standard library.
 
 To achieve this, we define a \texttt{Maybe} type as a replacement for
-Haskell's \texttt{data Maybe a = Just a \textbar{} Nothing}. The Scott
-encoding for \texttt{Maybe} takes two \emph{case} arguments, the first,
-of type \texttt{n}, corresponding to \texttt{nothing}, so it has no
-parameters, and the second, of type \texttt{a -\textgreater{} j},
-corresponding to \texttt{just a}, so it has one parameter of type
+Haskell's \texttt{data\ Maybe\ a\ =\ Just\ a\ \textbar{}\ Nothing}. The
+Scott encoding for \texttt{Maybe} takes two \emph{case} arguments, the
+first, of type \texttt{n}, corresponding to \texttt{nothing}, so it has
+no parameters, and the second, of type \texttt{a\ -\textgreater{}\ j},
+corresponding to \texttt{just\ a}, so it has one parameter of type
 \texttt{a}.
 
 \begin{Shaded}
@@ -225,5 +225,7 @@ basic extensions. The resulting subtypes allow us to define total
 versions of existing partial functions, preventing runtime errors. We
 are currently working on formalizing and verifying this approach using
 parametricity \cite{wadler1989theorems}.
+
+\bibliographystyle{abbrvnat}\bibliography{subtypes}
 
 \end{document}

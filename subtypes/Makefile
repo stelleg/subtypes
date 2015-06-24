@@ -1,13 +1,13 @@
 all: subtypes.pdf
 
-index.html: hm_scott.lhs
-	pandoc -s -S --toc -c pandoc.css hm_scott.lhs -o index.html
+index.html: subtypes.lhs
+	pandoc -s -S --toc -c pandoc.css subtypes.lhs -o index.html
 
-subtypes.pdf: hm_scott.lhs
-	pandoc -s --template=default.latex -S hm_scott.lhs -o subtypes.tex
+subtypes.pdf: subtypes.lhs
+	pandoc -s --template=default.latex -S subtypes.lhs -o subtypes.tex
 	pdflatex subtypes.tex
 	bibtex subtypes
 	pdflatex subtypes.tex
 	pdflatex subtypes.tex
-	grep -v '>' hm_scott.lhs | wc -w
+	grep -v '>' subtypes.lhs | wc -w
 	mupdf subtypes.pdf

@@ -111,3 +111,6 @@ partial functions, preventing runtime errors. We are currently working on
 formalizing and verifying this approach using parametricity
 \cite{wadler1989theorems}. 
 
+\bibliographystyle{abbrvnat}
+\bibliography{subtypes}
+
