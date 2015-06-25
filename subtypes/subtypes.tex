@@ -41,6 +41,8 @@
             linkcolor=magenta,
             pdfborder={0 0 0}}
 \urlstyle{same}  % don't use monospace font for urls
+\usepackage{natbib}
+\bibliographystyle{plainnat}
 \usepackage{color}
 \usepackage{fancyvrb}
 \newcommand{\VerbBar}{|}
@@ -62,9 +64,6 @@
 \newcommand{\RegionMarkerTok}[1]{{#1}}
 \newcommand{\ErrorTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{{#1}}}}
 \newcommand{\NormalTok}[1]{{#1}}
-\usepackage[normalem]{ulem}
-% avoid problems with \sout in headers with hyperref:
-\pdfstringdefDisableCommands{\renewcommand{\sout}{}}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{6pt plus 2pt minus 1pt}
 \setlength{\emergencystretch}{3em}  % prevent overfull lines
@@ -98,8 +97,8 @@ restrict what a value will be. In Haskell, for example, the type
 possible, so instead of always inferring \texttt{Bool}, it could infer
 \texttt{True}, \texttt{False}, or \texttt{Bool}, where \texttt{True} and
 \texttt{False} are \emph{subtypes} of \texttt{Bool}, i.e.~every value of
-type \texttt{True} is also of type \texttt{Bool}. This preciseness can
-ensure the prevention of run-time errors by removing partial functions,
+type \texttt{True} is also of type \texttt{Bool}. This kind of
+preciseness can prevent run-time errors by removing partial functions,
 like \texttt{head} and \texttt{tail}.
 
 \section{Existing Approaches}\label{existing-approaches}
@@ -107,16 +106,16 @@ like \texttt{head} and \texttt{tail}.
 There is a significant literature on subtyping, mostly in the context of
 object-oriented (OO) languages. Indeed, subtyping in languages that
 combine OO features with functional features implement subtypes using
-objects \cite{odersky2004overview, leroy2014ocaml}.
+objects {[}\cite{odersky2004overview, leroy2014ocaml}{]}.
 
 Generalized algebraic data types (GADTs) enable a limited form of
-subtyping as well \cite{fluet2006phantom}. For example, in the canonical
-example of a simple language with booleans and integers,
-\texttt{Expr\ Int} are distinct from \texttt{Expr\ Bool}, while both are
-subtypes of \texttt{Expr\ a}.
+subtyping as well {[}\cite{fluet2006phantom}{]}. For example, in the
+canonical example of a simple language with booleans and integers,
+\texttt{Expr Int} are distinct from \texttt{Expr Bool}, while both are
+subtypes of \texttt{Expr a}.
 
-For both the OO and the GADT approaches, we are not aware of any capable
-of inferring:
+However, for both the OO and the GADT approaches, we are not aware of
+any capable of inferring:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -130,10 +129,8 @@ empty list.
 \section{Our Approach}\label{our-approach}
 
 We use Scott encoding of algebraic data types, along with the Glasgow
-Haskell Compiler's (GHC's) type inference, to achieve a very general
-form of subtype polymorphism. We show how GHC can take advantage of this
-approach without modification by \sout{abusing} taking full advantage of
-rank-n types.
+Haskell Compiler's (GHC's) type inference with rank-n polymorphism to
+achieve a very general form of subtype polymorphism.
 
 Scott encodings are implementations of algebraic data types that encode
 their own \texttt{case} destruction using lambda expressions. Our
@@ -155,16 +152,16 @@ This allows us to type the following examples, among others:
 
 \section{An Example}\label{an-example}
 
-One application of subtyping is to runtime failures. Here we show how to
-use our approach to define a total version of \texttt{fromJust} from the
-Haskell standard library.
+One application of subtyping is to prevent runtime failures. Here we
+show how to use our approach to define a total version of
+\texttt{fromJust} from the Haskell standard library.
 
 To achieve this, we define a \texttt{Maybe} type as a replacement for
-Haskell's \texttt{data\ Maybe\ a\ =\ Just\ a\ \textbar{}\ Nothing}. The
-Scott encoding for \texttt{Maybe} takes two \emph{case} arguments, the
-first, of type \texttt{n}, corresponding to \texttt{nothing}, so it has
-no parameters, and the second, of type \texttt{a\ -\textgreater{}\ j},
-corresponding to \texttt{just\ a}, so it has one parameter of type
+Haskell's \texttt{data Maybe a = Just a \textbar{} Nothing}. The Scott
+encoding for \texttt{Maybe} takes two \emph{case} arguments, the first,
+of type \texttt{n}, corresponding to \texttt{nothing}, so it has no
+parameters, and the second, of type \texttt{a -\textgreater{} j},
+corresponding to \texttt{just a}, so it has one parameter of type
 \texttt{a}.
 
 \begin{Shaded}
@@ -224,8 +221,8 @@ We have shown how to attain powerful form of subtyping in Haskell using
 basic extensions. The resulting subtypes allow us to define total
 versions of existing partial functions, preventing runtime errors. We
 are currently working on formalizing and verifying this approach using
-parametricity \cite{wadler1989theorems}.
+parametricity {[}\cite{wadler1989theorems}{]}.
 
-\bibliographystyle{abbrvnat}\bibliography{subtypes}
+\bibliography{subtypes}
 
 \end{document}

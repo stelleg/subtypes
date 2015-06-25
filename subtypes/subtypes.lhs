@@ -8,8 +8,8 @@ what a value will be. In Haskell, for example, the type `Bool` ensures a value
 will either be `True` or `False`. What we want is the type system to be precise
 when possible, so instead of always inferring `Bool`, it could infer `True`,
 `False`, or `Bool`, where `True` and `False` are *subtypes* of `Bool`, i.e.
-every value of type `True` is also of type `Bool`. This preciseness can ensure
-the prevention of run-time errors by removing partial functions, like `head` and
+every value of type `True` is also of type `Bool`. This kind of preciseness can
+prevent run-time errors by removing partial functions, like `head` and
 `tail`.
 
 Existing Approaches
@@ -17,14 +17,14 @@ Existing Approaches
 There is a significant literature on subtyping, mostly in the context of
 object-oriented (OO) languages. Indeed, subtyping in languages that combine
 OO features with functional features implement subtypes using objects
-\cite{odersky2004overview, leroy2014ocaml}. 
+[\cite{odersky2004overview, leroy2014ocaml}]. 
 
 Generalized algebraic data types (GADTs) enable a limited form of subtyping as
-well \cite{fluet2006phantom}. For example, in the canonical example of a simple
+well [\cite{fluet2006phantom}]. For example, in the canonical example of a simple
 language with booleans and integers, `Expr Int` are distinct from `Expr Bool`,
 while both are subtypes of `Expr a`.
 
-For both the OO and the GADT approaches, we are not aware of any
+However, for both the OO and the GADT approaches, we are not aware of any
 capable of inferring:
 
 ```haskell
@@ -36,9 +36,8 @@ where `null` checks if a list is empty and `nil` is the empty list.
 Our Approach
 ============
 We use Scott encoding of algebraic data types, along with the Glasgow Haskell
-Compiler's (GHC's) type inference, to achieve a very general form of subtype
-polymorphism. We show how GHC can take advantage of this approach without
-modification by ~~abusing~~ taking full advantage of rank-n types. 
+Compiler's (GHC's) type inference with rank-n polymorphism to achieve a very
+general form of subtype polymorphism. 
 
 Scott encodings are implementations of algebraic data types that encode their
 own `case` destruction using lambda expressions. Our primary insight is that by
@@ -57,9 +56,9 @@ This allows us to type the following examples, among others:
 
 An Example
 ==========
-One application of subtyping is to runtime failures. Here we show how to use our
-approach to define a total version of `fromJust` from the Haskell standard
-library.
+One application of subtyping is to prevent runtime failures. Here we show how to
+use our approach to define a total version of `fromJust` from the Haskell
+standard library.
 
 To achieve this, we define a `Maybe` type as a replacement for Haskell's `data
 Maybe a = Just a | Nothing`. The Scott encoding for `Maybe` takes two *case*
@@ -109,8 +108,7 @@ We have shown how to attain powerful form of subtyping in Haskell using basic
 extensions. The resulting subtypes allow us to define total versions of existing
 partial functions, preventing runtime errors. We are currently working on
 formalizing and verifying this approach using parametricity
-\cite{wadler1989theorems}. 
+[\cite{wadler1989theorems}]. 
 
-\bibliographystyle{abbrvnat}
 \bibliography{subtypes}
 

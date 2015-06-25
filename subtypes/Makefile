@@ -3,8 +3,8 @@ all: subtypes.pdf
 index.html: subtypes.lhs
 	pandoc -s -S --toc -c pandoc.css subtypes.lhs -o index.html
 
-subtypes.pdf: subtypes.lhs
-	pandoc -s --template=default.latex -S subtypes.lhs -o subtypes.tex
+subtypes.pdf: subtypes.lhs subtypes.bib 
+	pandoc -s --template=default.latex -S subtypes.lhs --natbib -o subtypes.tex
 	pdflatex subtypes.tex
 	bibtex subtypes
 	pdflatex subtypes.tex
