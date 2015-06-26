@@ -10,7 +10,6 @@ subtypes.pdf: subtypes.lhs subtypes.bib
 	pdflatex subtypes.tex
 	pdflatex subtypes.tex
 	cat subtypes.lhs | wc -w
-	mupdf subtypes.pdf
 
 clean: 
 	rm -f subtypes.pdf subtypes.aux subtypes.bbl subtypes.blg subtypes.out subtypes.log

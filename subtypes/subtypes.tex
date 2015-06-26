@@ -90,25 +90,27 @@
 
 \section{Introduction}\label{introduction}
 
-Haskell's popularity is in large part thanks to its powerful type system
-which prevents a large class of runtime errors. Still, there are a class
-of function that expect only a subtype of their declared type, e.g.
-\texttt{head}, that can fail at runtime. We present an approach to
-subtyping GADTs that allows us to define versions of these functions
-that cannot fail.
+Haskell's popularity is in large part due to its powerful type system,
+which prevents a large class of runtime errors. Still, there is a class
+of runtime errors which the type system does not prevent because some
+functions assume a subtype of the declared argument type. For example,
+the \texttt{head} function can fail at runtime if the argument nil.
+Partial function errors of this sort can be prevented with appropriate
+subtype inference. We present an approach to implementing generalized
+algebraic data types (GADTs) using rank-n types that supports subtype
+inference to prevent these kinds of failures.
 
-\section{Existing Approaches}\label{existing-approaches}
+\section{Previous Work}\label{previous-work}
 
-There is much too broad a literature on subtyping to cover here, from
-inheritance in object oriented languages and Liskov's substitution
-principle \cite{liskov1994behavioral} to row and record polymorphism to
+There is a vast literature on subtyping, from inheritance in
+object-oriented languages and Liskov's substitution principle
+{[}\cite{liskov1994behavioral}{]} to row and record polymorphism to
 phantom types and generalized algebraic data types (GADTs)
-{[}\cite{odersky2004overview,
-leroy2014ocaml}{]}. We instead focus on what these techniques
-\emph{can't} do. Namely, as far as we are aware, \emph{no existing
-subtyping scheme can, for a given GADT, define \textbf{and infer} types
-for arbitrary subsets of the constructors}. For example, we are not
-aware of any subtyping scheme able to infer that:
+{[}\cite{odersky2004overview, leroy2014ocaml}{]}. This work has enabled
+many powerful type systems, but to our knowledge, none of these
+subtyping schemes support inference over arbitrary subsets of the
+constructors. For example, we are not aware of any subtyping scheme that
+infers:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -117,34 +119,31 @@ aware of any subtyping scheme able to infer that:
 \end{Shaded}
 
 where \texttt{null} checks if a list is empty, \texttt{nil} is the empty
-list, and \texttt{True} is the subtype of \texttt{Bool} containing only
-the value \texttt{true} (modulo program equivalence). We present an
+list, and \texttt{True} is a subtype of \texttt{Bool}. We present an
 approach that enables this kind of inference.
 
-\section{Our Approach}\label{our-approach}
+\section{Approach}\label{approach}
 
-By inferring \texttt{Bool} as the type of \texttt{True}, we are losing
-precision in the type system about what the value can be. What we would
-like is for the type system to be precise when possible, so instead of
-always inferring \texttt{Bool}, it could infer \texttt{True},
-\texttt{False}, or \texttt{Bool}, where \texttt{True} and \texttt{False}
-are \emph{subtypes} of \texttt{Bool}, i.e.~every value of type
-\texttt{True} is also of type \texttt{Bool}. We present an approach that
-enables this class of inference, and show how it can prevent run-time
-errors by replacing partial functions with their total counterparts,
-e.g. \texttt{head} and \texttt{tail}.
+As a simple example of the class of subtyping we investigate, consider a
+typical Haskell inference, \texttt{True :: Bool}. Inferring
+\texttt{Bool} as the type of \texttt{True} loses information about the
+expression's possible values. Ideally, the type system would be as
+precise as possible, so instead of always inferring \texttt{Bool}, it
+could infer \texttt{True}, \texttt{False}, or \texttt{Bool}, where
+\texttt{True} and \texttt{False} are \emph{subtypes} of \texttt{Bool},
+i.e.~every value of type \texttt{True} is also of type \texttt{Bool}.
+This level of precision can prevent certain types of run-time errors by
+replacing partial functions with their total counterparts.
 
 We use Scott encoding of algebraic data types, along with the Glasgow
 Haskell Compiler's (GHC's) type inference with rank-n polymorphism to
-achieve a very general form of subtype polymorphism.
-
-Scott encodings are implementations of algebraic data types that encode
-their own \texttt{case} destruction using lambda expressions. Our
-primary insight is that by wrapping the Scott encodings in a
-\texttt{newtype}, and then carefully constraining the types, we can
-define types that represent arbitrary subsets of the constructors.
-
-This allows us to type the following examples, among others:
+achieve a general form of subtype polymorphism. TODO: More precise.
+Scott encodings implement algebraic data types by encoding their own
+\texttt{case} deconstruction using lambda expressions. By wrapping the
+Scott encodings in a \texttt{newtype}, and then carefully constraining
+the types, we can define types that represent arbitrary subsets of the
+constructors. This approach allows us to typecheck the following
+examples, among others:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -156,19 +155,18 @@ This allows us to type the following examples, among others:
 \end{Highlighting}
 \end{Shaded}
 
-\section{An Example}\label{an-example}
+\section{Preventing Runtime Failures with Subtype
+Inferencing}\label{preventing-runtime-failures-with-subtype-inferencing}
 
-One application of subtyping is to prevent runtime failures. Here we
-show how to use our approach to define a total version of
+We illustrate our approach by defining a total version of
 \texttt{fromJust} from the Haskell standard library.
 
-To achieve this, we define a \texttt{Maybe} type as a replacement for
-Haskell's \texttt{data Maybe a = Just a \textbar{} Nothing}. The Scott
-encoding for \texttt{Maybe} takes two \emph{case} arguments, the first,
-of type \texttt{n}, corresponding to \texttt{nothing}, so it has no
-parameters, and the second, of type \texttt{a -\textgreater{} j},
-corresponding to \texttt{just a}, so it has one parameter of type
-\texttt{a}.
+Define a \texttt{Maybe} type as a replacement for Haskell's
+\texttt{data Maybe a = Just a \textbar{} Nothing}. The Scott encoding
+for \texttt{Maybe} takes two case arguments, the first, of type
+\texttt{n}, corresponding to \texttt{nothing}, so it has no parameters,
+and the second, of type \texttt{a -\textgreater{} j}, corresponding to
+\texttt{just a}, so it has one parameter of type \texttt{a}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -183,19 +181,18 @@ corresponding to \texttt{just a}, so it has one parameter of type
 \end{Highlighting}
 \end{Shaded}
 
-Our \texttt{Maybe} type is analogous to the standard \texttt{Data.Maybe}
-type in Haskell. In this case, similar to the \texttt{maybe} function
-from \texttt{Data.Maybe}, we don't know whether we have a value of type
-\texttt{Just} or a value of type \texttt{Nothing}, so we must ensure
-that the two cases return the same type. But if the compiler can infer
-that the value is of type \texttt{Just}, we don't care what the
+For the `Maybe' type, similar to the \texttt{maybe} function from
+Haskell's \texttt{Data.Maybe}, we don't know whether we have a value of
+type \texttt{Just} or a value of type \texttt{Nothing}, so we must
+ensure that both cases return the same type. But, if the compiler can
+infer that the value is of type \texttt{Just}, we don't care what the
 \texttt{n} type is, and only constrain the return type to be the same as
 the \texttt{Just} case \texttt{j}.
 
-With that in mind, we can write our total \texttt{fromJust}, using a
-\texttt{Bottom} type with no values to convince ourselves that our
-function will never typecheck \texttt{fromJust} applied to a type that
-includes \texttt{Nothing}.
+With that in mind, we now write the total function \texttt{fromJust}. As
+a sanity check, we define the type \texttt{Bottom} which has no values
+and observe that the function never typechecks \texttt{fromJust} applied
+to a type that includes \texttt{Nothing}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -207,8 +204,8 @@ includes \texttt{Nothing}.
 \end{Highlighting}
 \end{Shaded}
 
-We can still define the partial version of \texttt{fromJust}, which like
-the one from the Haskell standard library, allows runtime failure.
+By contrast, the partial function \texttt{partialFromJust}, identical to
+that defined in the Haskell standard library, allows runtime failures.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -217,17 +214,21 @@ the one from the Haskell standard library, allows runtime failure.
 \end{Highlighting}
 \end{Shaded}
 
-We have implemented more sophisticated examples, including recursive
-types, GADTs, and total versions of \texttt{head} and \texttt{tail},
+More elaborate examples, including recursive types, GADTs, and total
+versions of \texttt{head} and \texttt{tail}, are implemented and
 available at \url{http://cs.unm.edu/~stelleg/scott/}.
+
+We are currently formalizing and verifying this approach using
+parametricity. {[}\cite{wadler1989theorems}{]}.
 
 \section{Conclusion}\label{conclusion}
 
-We have shown how to attain powerful form of subtyping in Haskell using
-basic extensions. The resulting subtypes allow us to define total
-versions of existing partial functions, preventing runtime errors. We
-are currently working on formalizing and verifying this approach using
-parametricity {[}\cite{wadler1989theorems}{]}.
+Powerful forms of subtyping such as we have shown here could help
+Haskell programs avoid some classes of run-time errors, by defining
+total versions of existing partial functions. As the Haskell language
+continues to mature and gain wider acceptance in the programming
+community, automatic prevention of runtime errors also becomes more
+important.
 
 \bibliography{subtypes}
 
