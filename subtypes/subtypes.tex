@@ -88,34 +88,27 @@
 \begin{document}
 \maketitle
 
-\section{Motivation}\label{motivation}
+\section{Introduction}\label{introduction}
 
-It would be nice if a type system could be as precise as possible to
-restrict what a value will be. In Haskell, for example, the type
-\texttt{Bool} ensures a value will either be \texttt{True} or
-\texttt{False}. What we want is the type system to be precise when
-possible, so instead of always inferring \texttt{Bool}, it could infer
-\texttt{True}, \texttt{False}, or \texttt{Bool}, where \texttt{True} and
-\texttt{False} are \emph{subtypes} of \texttt{Bool}, i.e.~every value of
-type \texttt{True} is also of type \texttt{Bool}. This kind of
-preciseness can prevent run-time errors by removing partial functions,
-like \texttt{head} and \texttt{tail}.
+Haskell's popularity is in large part thanks to its powerful type system
+which prevents a large class of runtime errors. Still, there are a class
+of function that expect only a subtype of their declared type, e.g.
+\texttt{head}, that can fail at runtime. We present an approach to
+subtyping GADTs that allows us to define versions of these functions
+that cannot fail.
 
 \section{Existing Approaches}\label{existing-approaches}
 
-There is a significant literature on subtyping, mostly in the context of
-object-oriented (OO) languages. Indeed, subtyping in languages that
-combine OO features with functional features implement subtypes using
-objects {[}\cite{odersky2004overview, leroy2014ocaml}{]}.
-
-Generalized algebraic data types (GADTs) enable a limited form of
-subtyping as well {[}\cite{fluet2006phantom}{]}. For example, in the
-canonical example of a simple language with booleans and integers,
-\texttt{Expr Int} are distinct from \texttt{Expr Bool}, while both are
-subtypes of \texttt{Expr a}.
-
-However, for both the OO and the GADT approaches, we are not aware of
-any capable of inferring:
+There is much too broad a literature on subtyping to cover here, from
+inheritance in object oriented languages and Liskov's substitution
+principle \cite{liskov1994behavioral} to row and record polymorphism to
+phantom types and generalized algebraic data types (GADTs)
+{[}\cite{odersky2004overview,
+leroy2014ocaml}{]}. We instead focus on what these techniques
+\emph{can't} do. Namely, as far as we are aware, \emph{no existing
+subtyping scheme can, for a given GADT, define \textbf{and infer} types
+for arbitrary subsets of the constructors}. For example, we are not
+aware of any subtyping scheme able to infer that:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -123,10 +116,23 @@ any capable of inferring:
 \end{Highlighting}
 \end{Shaded}
 
-where \texttt{null} checks if a list is empty and \texttt{nil} is the
-empty list.
+where \texttt{null} checks if a list is empty, \texttt{nil} is the empty
+list, and \texttt{True} is the subtype of \texttt{Bool} containing only
+the value \texttt{true} (modulo program equivalence). We present an
+approach that enables this kind of inference.
 
 \section{Our Approach}\label{our-approach}
+
+By inferring \texttt{Bool} as the type of \texttt{True}, we are losing
+precision in the type system about what the value can be. What we would
+like is for the type system to be precise when possible, so instead of
+always inferring \texttt{Bool}, it could infer \texttt{True},
+\texttt{False}, or \texttt{Bool}, where \texttt{True} and \texttt{False}
+are \emph{subtypes} of \texttt{Bool}, i.e.~every value of type
+\texttt{True} is also of type \texttt{Bool}. We present an approach that
+enables this class of inference, and show how it can prevent run-time
+errors by replacing partial functions with their total counterparts,
+e.g. \texttt{head} and \texttt{tail}.
 
 We use Scott encoding of algebraic data types, along with the Glasgow
 Haskell Compiler's (GHC's) type inference with rank-n polymorphism to
@@ -183,8 +189,8 @@ from \texttt{Data.Maybe}, we don't know whether we have a value of type
 \texttt{Just} or a value of type \texttt{Nothing}, so we must ensure
 that the two cases return the same type. But if the compiler can infer
 that the value is of type \texttt{Just}, we don't care what the
-\texttt{n} cases type is, and only constrain the return type to be the
-same as the \texttt{Just} case \texttt{j}.
+\texttt{n} type is, and only constrain the return type to be the same as
+the \texttt{Just} case \texttt{j}.
 
 With that in mind, we can write our total \texttt{fromJust}, using a
 \texttt{Bottom} type with no values to convince ourselves that our

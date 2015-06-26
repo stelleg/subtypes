@@ -1,40 +1,43 @@
 % Subtypes for Free!
 % George Stelle and Stephanie Forrest
 
-Motivation
+Introduction
 ==========
-It would be nice if a type system could be as precise as possible to restrict
-what a value will be. In Haskell, for example, the type `Bool` ensures a value
-will either be `True` or `False`. What we want is the type system to be precise
-when possible, so instead of always inferring `Bool`, it could infer `True`,
-`False`, or `Bool`, where `True` and `False` are *subtypes* of `Bool`, i.e.
-every value of type `True` is also of type `Bool`. This kind of preciseness can
-prevent run-time errors by removing partial functions, like `head` and
-`tail`.
+Haskell's popularity is in large part thanks to its powerful type system which 
+prevents a large class of runtime errors. Still, there are a class of function
+that expect only a subtype of their declared argument type, e.g. `head`, that
+can fail at runtime. We present an approach to subtyping GADTs using rank-n
+types that allows us to define versions of these functions that cannot fail. 
 
 Existing Approaches
 ===================
-There is a significant literature on subtyping, mostly in the context of
-object-oriented (OO) languages. Indeed, subtyping in languages that combine
-OO features with functional features implement subtypes using objects
-[\cite{odersky2004overview, leroy2014ocaml}]. 
-
-Generalized algebraic data types (GADTs) enable a limited form of subtyping as
-well [\cite{fluet2006phantom}]. For example, in the canonical example of a simple
-language with booleans and integers, `Expr Int` are distinct from `Expr Bool`,
-while both are subtypes of `Expr a`.
-
-However, for both the OO and the GADT approaches, we are not aware of any
-capable of inferring:
+There is much too broad a literature on subtyping to cover here, from
+inheritance in object oriented languages and Liskov's substitution principle
+\cite{liskov1994behavioral} to row and record polymorphism to phantom types and
+generalized algebraic data types (GADTs) [\cite{odersky2004overview,
+leroy2014ocaml}]. We instead focus on what these techniques *can't* do. Namely,
+as far as we are aware, *no existing subtyping scheme can, for a given GADT,
+define __and infer__ types for arbitrary subsets of the constructors*. For
+example, we are not aware of any subtyping scheme able to infer that:
 
 ```haskell
    null nil :: True
 ```
 
-where `null` checks if a list is empty and `nil` is the empty list.
+where `null` checks if a list is empty, `nil` is the empty list, and `True` is
+a subtype of `Bool`. We present an approach that enables this kind of inference. 
 
 Our Approach
 ============
+By inferring `Bool` as the type of `True`, we are losing precision in the type
+system about what the value can be. What we would like is for the type system to
+be precise when possible, so instead of always inferring `Bool`, it could infer
+`True`, `False`, or `Bool`, where `True` and `False` are *subtypes* of `Bool`,
+i.e. every value of type `True` is also of type `Bool`. We present an approach
+that enables this class of inference, and show how it can prevent run-time
+errors by replacing partial functions with their total counterparts, e.g. `head`
+and `tail`.  
+
 We use Scott encoding of algebraic data types, along with the Glasgow Haskell
 Compiler's (GHC's) type inference with rank-n polymorphism to achieve a very
 general form of subtype polymorphism. 
@@ -79,8 +82,8 @@ Our `Maybe` type is analogous to the standard `Data.Maybe` type in Haskell. In
 this case, similar to the `maybe` function from `Data.Maybe`, we don't know
 whether we have a value of type `Just` or a value of type `Nothing`, so we must
 ensure that the two cases return the same type. But if the compiler can infer
-that the value is of type `Just`, we don't care what the `n` cases type is, and
-only constrain the return type to be the same as the `Just` case `j`.
+that the value is of type `Just`, we don't care what the `n` type is, and only
+constrain the return type to be the same as the `Just` case `j`.
 
 With that in mind, we can write our total `fromJust`, using a `Bottom` type with
 no values to convince ourselves that our function will never typecheck
