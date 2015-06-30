@@ -117,11 +117,10 @@ More elaborate examples are implemented and available at
 
 Conclusion
 ===========
-As the Haskell language continues to mature and gain wider acceptance in the
-programming community, automatic prevention of runtime errors becomes even more
-valuable. The restricted form of subtyping shown here could help Haskell
-programs avoid some classes of run-time errors by defining total versions of
-existing partial functions.  
+As Haskell continues to grow in popularity, automatic prevention of runtime
+errors becomes even more valuable. The restricted form of subtyping shown here
+could help Haskell programs avoid some classes of run-time errors by defining
+total versions of existing partial functions.  
 
 \bibliography{subtypes}
 
