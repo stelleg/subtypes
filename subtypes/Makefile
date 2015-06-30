@@ -9,7 +9,8 @@ subtypes.pdf: subtypes.lhs subtypes.bib
 	bibtex subtypes
 	pdflatex subtypes.tex
 	pdflatex subtypes.tex
-	cat subtypes.lhs | wc -w
+	grep -v '>   ' subtypes.lhs | wc -w
+	mupdf subtypes.pdf
 
 clean: 
 	rm -f subtypes.pdf subtypes.aux subtypes.bbl subtypes.blg subtypes.out subtypes.log
