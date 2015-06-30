@@ -93,7 +93,7 @@
 Haskell's popularity is in large part due to its powerful type system,
 which prevents a large class of runtime errors. Unfortunately, it
 doesn't prevent some runtime errors caused by partial functions which
-are only defined for subtype of their input type. For example, the
+are only defined for a subtype of their input type. For example, the
 \texttt{head} function will fail at runtime if the argument is the empty
 list. Some errors of this sort can be prevented with appropriate subtype
 inference. We present an approach to implementing algebraic data types
@@ -103,12 +103,12 @@ inference to prevent these kinds of failures.
 \section{Previous Work}\label{previous-work}
 
 With a few exceptions, work on subtypes has focused on defining a
-subtype heirarchy the entire type space
-{[}\cite{mitchell1991type, liskov1994behavioral}{]}. Our work is less
-ambitious in scope: we only define subtypes within the type of an ADT.
-Similar in spirit to Scala's \texttt{case class} constructs
-{[}\cite{odersky2004overview}{]}, our approach enables type inference
-over arbitrary subsets of the constructors of an ADT.
+subtype heirarchy over the entire type space {[}\cite{mitchell1991type,
+liskov1994behavioral}{]}. Our work is less ambitious in scope: we only
+define subtypes within the type of an ADT. Similar in spirit to Scala's
+\texttt{case class} constructs {[}\cite{odersky2004overview}{]}, our
+approach enables type inference over arbitrary subsets of the
+constructors of an ADT.
 
 Like our technique, generalized algebraic data types (GADTs) use
 parametric polymorphism to implement subtypes of ADTs
@@ -119,7 +119,7 @@ suspect that there is significant overlap between the approaches, and
 are working on proving that this is the case.
 
 We address the following gap in the literature: we are not aware of any
-type system that infers
+subtyping scheme that infers
 
 \begin{Shaded}
 \begin{Highlighting}[]

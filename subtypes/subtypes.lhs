@@ -4,7 +4,7 @@ Introduction
 ==========
 Haskell's popularity is in large part due to its powerful type system, which 
 prevents a large class of runtime errors. Unfortunately, it doesn't prevent some
-runtime errors caused by partial functions which are only defined for subtype of
+runtime errors caused by partial functions which are only defined for a subtype of
 their input type. For example, the `head` function will fail at runtime if the
 argument is the empty list. Some errors of this sort can be prevented with
 appropriate subtype inference. We present an approach to implementing algebraic
@@ -14,11 +14,11 @@ inference to prevent these kinds of failures.
 Previous Work
 =============
 With a few exceptions, work on subtypes has focused on defining a subtype
-heirarchy the entire type space [\cite{mitchell1991type, liskov1994behavioral}].
-Our work is less ambitious in scope: we only define subtypes within the type
-of an ADT.  Similar in spirit to Scala's `case class` constructs
-[\cite{odersky2004overview}], our approach enables type inference over arbitrary
-subsets of the constructors of an ADT.
+heirarchy over the entire type space [\cite{mitchell1991type,
+liskov1994behavioral}].  Our work is less ambitious in scope: we only define
+subtypes within the type of an ADT.  Similar in spirit to Scala's `case class`
+constructs [\cite{odersky2004overview}], our approach enables type inference
+over arbitrary subsets of the constructors of an ADT.
 
 Like our technique, generalized algebraic data types (GADTs) use parametric
 polymorphism to implement subtypes of ADTs [\cite{fluet2006phantom}].  Indeed,
@@ -28,7 +28,7 @@ approach or GADTs. We suspect that there is significant overlap between the
 approaches, and are working on proving that this is the case.
 
 We address the following gap in the literature: we are not aware of any
-type system that infers
+subtyping scheme that infers
 
 ```haskell
    null nil :: True
@@ -55,7 +55,7 @@ Glasgow Haskell Compiler's (GHC's) rank-n type inference. Scott encodings
 implement ADTs by encoding their own `case` deconstruction using lambda
 expressions, like the boolean case above. By wrapping the Scott encodings in a
 `newtype`, and then carefully constraining the types, we can define types that
-represent arbitrary subsets of an ADT's constructors.  This allows us to
+represent arbitrary subsets of an ADT's constructors. This allows us to
 typecheck the following examples, among others:
 
 ```haskell
