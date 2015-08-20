@@ -1,0 +1,233 @@
+\documentclass[final]{beamer} 
+\mode<presentation>
+\usepackage{inconsolata}
+\renewcommand*\familydefault{\ttdefault}
+\usepackage{dejavu}
+\renewcommand*\familydefault{\sfdefault}
+\usepackage{lmodern}
+\renewcommand\mathfamilydefault{\rmdefault}
+
+\usepackage[T1]{fontenc}
+\usepackage{listings}
+\lstset{language=Haskell,basicstyle=\ttfamily,xleftmargin=1cm,aboveskip=0.5cm,belowskip=0.5cm}
+\usepackage[size=a1]{beamerposter}
+\usepackage{verbatim}
+\usepackage{tikz}
+\usetikzlibrary{arrows, fit, shapes}
+\setbeamertemplate{headline}{  
+  \leavevmode
+  \begin{beamercolorbox}[wd=\paperwidth]{headline}
+    \begin{columns}[T]
+      \begin{column}{.05\paperwidth}
+      \end{column}
+      \begin{column}{.7\paperwidth}
+        \vskip3cm
+        \raggedright
+        {\color{red}{{\LARGE{\inserttitle}}\\[1ex]}}
+        \vskip0.5cm
+        {\color{fg}{\large{\insertauthor}\\[1ex]}}
+        %{\color{fg}{\large{\insertinstitute}\\[1ex]}}
+      \end{column}
+      \begin{column}{.25\paperwidth}
+        \begin{center}
+          \includegraphics[width=.7\linewidth]{unm}
+        \end{center}
+        \vskip2cm
+      \end{column}
+    \end{columns}
+  \end{beamercolorbox}
+
+  \begin{beamercolorbox}[wd=\paperwidth]{lower separation line head}
+    \rule{0pt}{2pt}
+  \end{beamercolorbox}
+}
+
+\setbeamertemplate{footline}{}
+
+\mode<all>
+
+\definecolor{red}{RGB}{205,16,65}
+\definecolor{grey}{RGB}{109,111,113}
+
+\setbeamerfont{structure}{family=\sffamily}
+\setbeamercolor{structure}{fg=red}
+\setbeamerfont{normal text}{family=\sffamily}
+\setbeamercolor{normal text}{fg=grey,bg=white}
+
+\title{Subtypes for Free!}
+\author{George Stelle}
+\institute{University of New Mexico}
+%\date{\today} 
+
+\begin{document}
+\begin{frame}[fragile]
+\begin{columns}
+\begin{column}{.285\textwidth}
+
+\begin{block}{Introduction}
+\vspace{0.5cm}
+Some runtime errors are caused by partial functions which are only defined for a
+subtype of their input type, e.g. \texttt{head}. We present an approach to
+implementing algebraic data types (ADTs) using Scott encodings types with GHC
+that supports subtype inference to help prevent these kinds of failures.
+\end{block}
+\vspace{2cm}
+\begin{block}{Subtypes from Parametric Polymorphism}
+\vspace{0.5cm}
+Parametric polymorphism implicitly defines subtype lattices. For example, given
+the type $\forall a, a \rightarrow a \rightarrow a$, we can derive the following
+subtype lattice:
+\vspace{0.5cm}
+\begin{figure}[!h]
+\centering
+\begin{tikzpicture}[->, line width=2pt, auto, node distance=4cm]
+\node (1) at (5,10) {$\forall a, a \rightarrow a \rightarrow a$};
+\node (2) at (0,5) {$\forall a b, a \rightarrow b \rightarrow a$};
+\node (3) at (10,5) {$\forall a b, a \rightarrow b \rightarrow b$};
+\node (4) at (5,0) {$\bot$};
+
+\path (2) edge node {} (1)
+      (3) edge node {} (1)
+      (4) edge node {} (2)
+      (4) edge node {} (3);
+\end{tikzpicture}
+\end{figure}
+By subtype relation, we mean the following: a type $\tau$ is a subtype of of
+another type $\tau'$ iff every value of type $\tau$ is also of type $\tau'$.
+\end{block}
+\vspace{2cm}
+\begin{block}{Unification is Join}
+\vspace{0.5cm}
+Unification-based type inference has the nice property that it implements the
+join (least upper bound) for the lattice described above. Intuitively, this
+means that the types inferred will be as specific as possible, given the type
+inference algorithm. 
+\end{block}
+\vspace{2cm}
+\begin{block}{Scott Encodings}
+\vspace{0.5cm}
+Scott encodings are a way of implementing algebraic data types (ADTs) using
+lambda terms. They enable the use of subtypes inherent in parametric
+polymorphism to implement subtypes for ADTs. 
+\end{block}
+\end{column}
+
+\begin{column}{.33\textwidth}
+\begin{block}{Example: A Total \texttt{fromJust}}
+\vspace{0.5cm}
+The Haskell data type
+
+\begin{verbatim}
+  data Maybe a = Nothing
+               | Just a
+\end{verbatim}
+
+can be implemented using Scott encodings as follows:
+
+\begin{verbatim}
+  newtype Maybe' a n j m = Maybe (n -> (a -> j) -> m)
+  type Maybe a = forall m. Maybe' a m m m 
+  type Just a = forall n j. Maybe' a n j j
+  just :: a -> Just a
+  just a = Maybe $ \n j -> j a
+  type Nothing = forall a n j. Maybe' a n j n
+  nothing :: Nothing
+  nothing = Maybe $ \n j -> n
+\end{verbatim}
+
+We wrap the Scott encoding in a \texttt{newtype} to preserve type safety and
+enable implementation of recursive types. This definition of \texttt{Maybe}
+gives us the following subtype lattice:
+
+\begin{figure}[!h]
+\centering
+\begin{tikzpicture}[->, line width=2pt, auto, node distance=4cm]
+\node (1) at (5,10) {\texttt{Maybe a}};
+\node (2) at (0,5) {\texttt{Nothing}};
+\node (3) at (10,5) {\texttt{Just a}};
+\node (4) at (5,0) {\texttt{Void}};
+
+\path (2) edge node {} (1)
+      (3) edge node {} (1)
+      (4) edge node {} (2)
+      (4) edge node {} (3);
+\end{tikzpicture}
+\end{figure}
+
+The function \texttt{fromJust} in the Haskell standard library is a
+\emph{partial} function: it can fail at runtime. We use the above types to
+define a total version of \texttt{fromJust} that is type-safe, i.e. cannot
+fail at runtime.
+
+\begin{verbatim}
+  bottom :: Void
+  bottom = undefined
+
+  fromJust :: Just a -> a
+  fromJust (Maybe j) = j bottom id 
+\end{verbatim}
+
+We have prevented a class of runtime error, using the power of parametric
+polymorphism!
+
+\end{block}
+
+\end{column}
+
+\begin{column}{.285\textwidth}
+\begin{block}{Other Examples}
+\vspace{0.5cm}
+There are number of other nice properties expressible and inferable with this
+approach. For example:
+
+\begin{verbatim}
+   true `and` false :: False
+   not . not $ true :: True
+   [true, false] :: Boolean
+   head :: Cons a -> a
+   tail :: Cons a -> List a
+   null nil :: True
+   wizard :: DaggerOrStaff -> Wizard
+\end{verbatim}
+
+Another example application of this approach is the implementation of the
+canonical example for GADTs and phantom types of a type-safe evaluator:
+
+\begin{verbatim}
+  type IntTerm = forall i ni. Term' i i ni ni i
+  ...
+  add :: IntTerm -> IntTerm -> IntTerm
+  tnot :: BoolTerm -> BoolTerm 
+\end{verbatim}
+
+In a similar vein, we can define evaluators which return a value, where a value
+is a subtype of the expression type, e.g.:
+
+\begin{verbatim}
+  eval :: Expr -> Value
+\end{verbatim}
+
+This is a common pattern, and important for the type safety of evaluators. 
+
+\end{block}
+\vspace{3cm}
+\begin{block}{Current Drawbacks and Limitations}
+\vspace{0.5cm}
+\begin{itemize}
+\item No recursive subtypes, e.g. can't write \texttt{head . tail}
+\item Performance
+\item Ugly: No pattern matching, verbose data type declarations 
+\item Type composition: Needs impredicative types
+\item Lacks correctness proofs
+\end{itemize}
+\end{block}
+\vspace{3cm}
+\begin{block}{Conclusion}
+The restricted form of subtyping shown here could help Haskell programs avoid
+some classes of run-time errors by defining total versions of existing partial
+functions. 
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+\end{document}
