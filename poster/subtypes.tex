@@ -98,7 +98,7 @@ another type $\tau'$ iff every value of type $\tau$ is also of type $\tau'$.
 \vspace{2cm}
 \begin{block}{Unification is Join}
 \vspace{0.5cm}
-Unification-based type inference has the nice property that it implements the
+Unification-based type inference has the useful property that it implements the
 join (least upper bound) for the lattice described above. Intuitively, this
 means that the types inferred will be as specific as possible, given the type
 inference algorithm. 
@@ -210,19 +210,21 @@ is a subtype of the expression type, e.g.:
 This is a common pattern, and important for the type safety of evaluators. 
 
 \end{block}
-\vspace{3cm}
+\vspace{2cm}
 \begin{block}{Current Drawbacks and Limitations}
 \vspace{0.5cm}
 \begin{itemize}
-\item No recursive subtypes, e.g. can't write \texttt{head . tail}
-\item Performance
+\item No recursive subtypes, e.g. can't write \verb!head . tail!
+\item Potential performance impacts
 \item Ugly: No pattern matching, verbose data type declarations 
 \item Type composition: Needs impredicative types
 \item Lacks correctness proofs
 \end{itemize}
+\vspace{2cm}
 \end{block}
-\vspace{3cm}
+
 \begin{block}{Conclusion}
+\vspace{0.5cm}
 The restricted form of subtyping shown here could help Haskell programs avoid
 some classes of run-time errors by defining total versions of existing partial
 functions. 
