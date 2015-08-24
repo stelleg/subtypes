@@ -13,7 +13,7 @@
 \usepackage{verbatim}
 \usepackage{tikz}
 \usetikzlibrary{arrows, fit, shapes}
-\setbeamertemplate{frametitle}{  
+\setbeamertemplate{frametitle}{
   \begin{beamercolorbox}[wd=0.95\paperwidth]{lower separation line head}
   \hspace{0.5cm}
   \insertframetitle
@@ -43,7 +43,7 @@
 \begin{frame}[fragile]
 \titlepage
 \end{frame}
-\begin{frame}{Motivation}
+\begin{frame}{Types}
 \centering
 \onslide<1->{Why types?}
 \vspace{2cm}
@@ -51,13 +51,60 @@
 \onslide<2->{\emph{So evalation can't go wrong at runtime}}
 \end{frame}
 
-\begin{frame}[fragile]{Partial Functions}
-\centering
-\begin{verbatim}
-  head :: [a] -> a
-  tail :: [a] -> [a]
-  fromJust :: Maybe a -> a
-\end{verbatim}
+\begin{frame}[fragile]{Partial functions}
+\onslide<1->{\texttt{head :: List a -> a}}
+
+\onslide<2->{\texttt{tail :: List a -> List a}}
+
+\onslide<3->{\texttt{fromJust :: Maybe a -> a}}
+
+\onslide<4->{\texttt{bigStepEval :: Expr -> Expr}}
+
+\onslide<5->{\texttt{warrior :: Weapon -> Warrior}}
 \end{frame}
+
+\begin{frame}[fragile]{Our Solution}
+\centering
+\onslide<1->{Subtypes from parametric polymorphism}
+
+\onslide<2->{+ 
+
+Unification}
+
+\onslide<3->{+
+
+Scott Encodings of ADTs}
+
+\end{frame}
+
+\begin{frame}[fragile]{Goal}
+\onslide<1->{\texttt{head :: Cons a -> a}}
+
+\onslide<2->{\texttt{tail :: Cons a -> List a}}
+
+\onslide<3->{\texttt{fromJust :: Just a -> a}}
+
+\onslide<4->{\texttt{bigStepEval :: Expr -> Value}}
+
+\onslide<5->{\texttt{warrior :: DaggerOrSword -> Warrior}}
+\end{frame}
+
+\begin{frame}[fragile]{Subtypes from Parametric Polymorphism}
+
+\centering
+\begin{tikzpicture}[->, line width=1pt, auto, node distance=4cm]
+\node (1) at (2,4) {$\forall a, a \rightarrow a \rightarrow a$};
+\node (2) at (0,2) {$\forall a b, a \rightarrow b \rightarrow a$};
+\node (3) at (4,2) {$\forall a b, a \rightarrow b \rightarrow b$};
+\node (4) at (2,0) {$\bot$};
+
+\path (2) edge node {} (1)
+      (3) edge node {} (1)
+      (4) edge node {} (2)
+      (4) edge node {} (3);
+\end{tikzpicture}
+
+\end{frame}
+
 
 \end{document}
