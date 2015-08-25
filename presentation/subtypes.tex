@@ -77,18 +77,6 @@ Scott Encodings of ADTs}
 
 \end{frame}
 
-\begin{frame}[fragile]{Goal}
-\onslide<1->{\texttt{head :: Cons a -> a}}
-
-\onslide<2->{\texttt{tail :: Cons a -> List a}}
-
-\onslide<3->{\texttt{fromJust :: Just a -> a}}
-
-\onslide<4->{\texttt{bigStepEval :: Expr -> Value}}
-
-\onslide<5->{\texttt{warrior :: DaggerOrSword -> Warrior}}
-\end{frame}
-
 \begin{frame}[fragile]{Subtypes from Parametric Polymorphism}
 
 \centering
@@ -106,5 +94,111 @@ Scott Encodings of ADTs}
 
 \end{frame}
 
+\begin{frame}[fragile]{\texttt{Bool}}
+
+\centering
+\begin{tikzpicture}[->, line width=1pt, auto, node distance=4cm]
+\node (1) at (2,4) {\texttt{Bool}};
+\node (2) at (0,2) {\texttt{True}};
+\node (3) at (4,2) {\texttt{False}};
+\node (4) at (2,0) {\texttt{Void}};
+
+\path (2) edge node {} (1)
+      (3) edge node {} (1)
+      (4) edge node {} (2)
+      (4) edge node {} (3);
+\end{tikzpicture}
+
+\end{frame}
+
+\begin{frame}[fragile]{Maybe}
+
+\centering
+\begin{tikzpicture}[->, line width=1pt, auto, node distance=4cm]
+\node (1) at (2,4) {$\forall m, m \rightarrow (a \rightarrow m) \rightarrow m$};
+\node (2) at (-1,2) {$\forall j n, n \rightarrow (a \rightarrow
+j) \rightarrow j$};
+\node (3) at (5,2) {$\forall j n, n \rightarrow (a
+\rightarrow j) \rightarrow n$ };
+\node (4) at (2,0) {$\bot$};
+
+\path (2) edge node {} (1)
+      (3) edge node {} (1)
+      (4) edge node {} (2)
+      (4) edge node {} (3);
+\end{tikzpicture}
+
+\end{frame}
+
+\begin{frame}[fragile]{\texttt{Maybe}}
+
+\centering
+\begin{tikzpicture}[->, line width=1pt, auto, node distance=4cm]
+\node (1) at (2,4) {\texttt{Maybe a}};
+\node (2) at (0,2) {\texttt{Just a}};
+\node (3) at (4,2) {\texttt{Nothing}};
+\node (4) at (2,0) {\texttt{Void}};
+
+\path (2) edge node {} (1)
+      (3) edge node {} (1)
+      (4) edge node {} (2)
+      (4) edge node {} (3);
+\end{tikzpicture}
+
+\end{frame}
+
+\begin{frame}[fragile]{Examples}
+\onslide<1->{\texttt{fromJust :: Just a -> a}}
+
+\onslide<2->{\texttt{head :: Cons a -> a}}
+
+\onslide<3->{\texttt{tail :: Cons a -> List a}}
+
+\onslide<4->{\texttt{bigStepEval :: Expr -> Value}}
+
+\onslide<5->{\texttt{warrior :: DaggerOrSword -> Warrior}}
+
+\onslide<6->{\texttt{true `and` false :: False}}
+
+\onslide<7->{\texttt{null nil :: True}}
+\end{frame}
+
+\begin{frame}[fragile]{Drawbacks and Limitations}
+\begin{itemize}
+\item <1-> Impredicative types
+\item <2-> Meet (Greatest lower bound)
+\item <3-> Recursive types
+\item <4-> Performance
+\item <5-> Ugly!
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Related work}
+
+\centering
+\begin{tikzpicture}[-, line width=1pt, auto, node distance=4cm]
+\node (1) at (0,0) {GADTs};
+\node (2) at (0,1) {\color{red} Free subtypes};
+\node (3) at (0,2) {Refinement Types};
+\node (4) at (0,3) {Dependent Types};
+
+\path (1) edge node {} (2)
+      (2) edge node {} (3)
+      (3) edge node {} (4);
+\end{tikzpicture}
+
+\end{frame}
+
+\begin{frame}
+
+\centering
+
+Thanks!
+
+\vspace{1cm}
+
+Questions?
+
+\end{frame}
 
 \end{document}
