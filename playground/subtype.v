@@ -25,4 +25,6 @@ Example nothing_maybe (a : Type): Nothing a -> Maybe a := coerce.
 Example left_either (a b : Type) : Left a b -> Either a b := coerce.
 Example right_either (a b : Type) : Right a b -> Either a b := coerce.
 
+Definition Bottom : Type := forall a, a.
 
+Example bot_true : Bottom -> (forall a b, Left a b) := inversion b.
