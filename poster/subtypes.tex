@@ -15,31 +15,34 @@
 \usepackage{tikz}
 \usetikzlibrary{arrows, fit, shapes}
 \setbeamertemplate{headline}{  
-  \leavevmode
+%  \leavevmode
   \begin{beamercolorbox}[wd=\paperwidth]{headline}
     \begin{columns}[T]
       \begin{column}{.05\paperwidth}
       \end{column}
-      \begin{column}{.7\paperwidth}
-        \vskip3cm
+      \begin{column}{.2\paperwidth}
+        \vskip1.5cm
         \raggedright
-        {\color{red}{{\LARGE{\inserttitle}}\\[1ex]}}
-        \vskip0.5cm
-        {\color{fg}{\large{\insertauthor}\\[1ex]}}
-        %{\color{fg}{\large{\insertinstitute}\\[1ex]}}
+        {\color{lightgrey}{\large{\insertauthor}\\[1ex]}}
+        {\color{lightgrey}{\normalsize{\insertinstitute}\\[1ex]}}
+        {\color{lightgrey}{\normalsize{\texttt{stelleg@cs.unm.edu}}\\[1ex]}}
+      \end{column}
+      \begin{column}{.5\paperwidth}
+        \vskip2cm
+        \centering
+        {\color{red}{{\Huge{\textbf{\inserttitle}}}\\[1ex]}}
       \end{column}
       \begin{column}{.25\paperwidth}
         \begin{center}
           \includegraphics[width=.7\linewidth]{unm}
         \end{center}
-        \vskip2cm
+        %\vskip1cm
       \end{column}
     \end{columns}
   \end{beamercolorbox}
-
-  \begin{beamercolorbox}[wd=\paperwidth]{lower separation line head}
-    \rule{0pt}{2pt}
-  \end{beamercolorbox}
+%  \begin{beamercolorbox}[wd=\paperwidth]{lower separation line head}
+%    \rule{0pt}{2pt}
+%  \end{beamercolorbox}
 }
 
 \setbeamertemplate{footline}{}
@@ -47,7 +50,8 @@
 \mode<all>
 
 \definecolor{red}{RGB}{205,16,65}
-\definecolor{grey}{RGB}{109,111,113}
+\definecolor{grey}{RGB}{25,25,25}
+\definecolor{lightgrey}{RGB}{109,111,113}
 
 \setbeamerfont{structure}{family=\sffamily}
 \setbeamercolor{structure}{fg=red}
@@ -56,7 +60,7 @@
 
 \title{Subtypes for Free!}
 \author{George Stelle}
-\institute{University of New Mexico}
+\institute{Department of Computer Science \\ University of New Mexico}
 %\date{\today} 
 
 \begin{document}
@@ -67,14 +71,15 @@
 \begin{block}{Introduction}
 \vspace{0.5cm}
 Some runtime errors are caused by partial functions which are only defined for a
-subtype of their input type, e.g. \texttt{head}. We present a simple form of
-subtyping that could help Haskell programs avoid some of these run-time errors
-by defining total versions of existing partial functions. 
+subtype of their input type, e.g. \texttt{head}. We present a simple subtyping
+scheme enabled by parametric polymorphism that could help Haskell programs avoid
+some of these run-time errors by defining total versions of existing partial
+functions. 
 \end{block}
 \vspace{1cm}
 \begin{block}{Subtypes from Parametric Polymorphism}
 \vspace{0.5cm}
-Parametric polymorphism implicitly defines subtype lattices. For example, given
+\textbf{Claim}: Parametric polymorphism implicitly defines subtype lattices. For example, given
 the type $\forall a, a \rightarrow a \rightarrow a$, we can derive the following
 subtype lattice:
 \vspace{0.5cm}
@@ -92,31 +97,29 @@ subtype lattice:
       (4) edge node {} (3);
 \end{tikzpicture}
 \end{figure}
-By subtype relation, we mean the following: a type $\tau$ is a subtype of
-another type $\tau'$ iff every value of type $\tau$ is also of type $\tau'$.
+Subtype relation (subsumption): a type $\tau$ is a subtype of another type $\tau'$ iff every
+expression of type $\tau$ is also of type $\tau'$.
 \end{block}
 \vspace{1cm}
 \begin{block}{Unification is Join}
 \vspace{0.5cm}
-Unification-based type inference has the useful property that it implements the
-join (least upper bound) for the lattice described above. Intuitively, this
-means that the types inferred will be as specific as possible, given the type
-inference algorithm. 
+Unification-based type inference implements join (least upper bound) for the
+lattice described above. Intuitively, types inferred will be as specific as
+possible. 
 \end{block}
 \vspace{1cm}
 \begin{block}{Scott Encodings}
 \vspace{0.5cm}
-Scott encodings are a way of implementing algebraic data types (ADTs) using
-lambda terms. They enable the use of subtypes inherent in parametric
-polymorphism to implement subtypes for ADTs. For any algebraic data type with
-$m$ constructors, implement constructor $C_i$ with $n$ parameters as:
+Scott encodings are a method for implementing algebraic data types (ADTs)
+using lambda terms. For any algebraic data type with $m$ constructors,
+constructor $C_i$ with $n$ parameters is implemented as:
 
-$$C_i x_0 x_1 \cdots x_n = \lambda x_0 x_1 \cdots x_n c_0 c_1 \cdots c_m . c_i x_0 x_1 \cdots x_n$$
+$$C_i \tau_0 \tau_1 \cdots \tau_n = \lambda x_0 x_1 \cdots x_n c_0 c_1 \cdots c_m . c_i x_0 x_1 \cdots x_n$$
 \end{block}
 \end{column}
 
 \begin{column}{.33\textwidth}
-\begin{block}{Example: A Total \texttt{fromJust}}
+\begin{block}{Example: \texttt{fromJust}}
 \vspace{0.5cm}
 We begin with the Haskell data type for \texttt{Maybe}:
 
@@ -126,7 +129,7 @@ We begin with the Haskell data type for \texttt{Maybe}:
 \end{verbatim}
 
 A useful function defined in the Haskell standard library for this type is the
-function \texttt{fromJust :: Maybe a -> a}, which fails when applied to
+function \verb!fromJust :: Maybe a -> a!, which fails when applied to
 \texttt{Nothing}.
 
 \begin{verbatim}
@@ -155,11 +158,11 @@ This definition of \texttt{Maybe} gives us the following subtype lattice:
 \begin{tikzpicture}[->, align=center, line width=2pt, auto, node distance=4cm]
 \node (1) at (5,10) {\texttt{Maybe $a$} = \\ $\forall m, m \rightarrow (a
 \rightarrow m) \rightarrow m$ \\ \{\texttt{just a}, \texttt{nothing}\}};
-\node (2) at (-2,5) {\texttt{Just $a$} = \\ $\forall j n, n \rightarrow (a \rightarrow
+\node (2) at (-2,5) {\texttt{Just $a$} = \\ $\forall n j, n \rightarrow (a \rightarrow
 j) \rightarrow j$ \\ \{\texttt{just a}\} };
-\node (3) at (12,5) {\texttt{Nothing} = \\ $\forall a j n, n \rightarrow (a
+\node (3) at (12,5) {\texttt{Nothing} = \\ $\forall a n j, n \rightarrow (a
 \rightarrow j) \rightarrow n$ \\ \{\texttt{nothing}\} };
-\node (4) at (5,0) {\texttt{MaybeBottom} = \\ $\forall a j n m, n \rightarrow (a \rightarrow j)
+\node (4) at (5,0) {\texttt{MaybeBottom} = \\ $\forall a n j m, n \rightarrow (a \rightarrow j)
 \rightarrow m$ \\ \{\} };
 
 \path (2) edge node {} (1)
@@ -170,13 +173,12 @@ j) \rightarrow j$ \\ \{\texttt{just a}\} };
 \end{figure}
 
 The function \texttt{fromJust} in the Haskell standard library is a
-\emph{partial} function: it can fail at runtime. We use the above types to
-define a total version of \texttt{fromJust} that is type-safe, i.e. cannot
-fail at runtime.
+\emph{partial} function: it can fail at runtime. We replace it with a total
+version that is type-safe, i.e. cannot fail at runtime:
 
 \begin{verbatim}
   fromJust :: Just a -> a
-  fromJust (Maybe j) = j (undefined::Void) id 
+  fromJust j = j (undefined::Void) id 
 \end{verbatim}
 
 \end{block}
@@ -186,58 +188,76 @@ fail at runtime.
 \begin{column}{.285\textwidth}
 \begin{block}{Other Examples}
 \vspace{0.5cm}
-There are number of other potentially useful types expressible and
-inferable with this approach:
 
 \begin{verbatim}
-   true `and` false :: False
-   not . not $ true :: True
-   [true, true] :: [True]
-   [true, false] :: [Bool]
-   head :: Cons a -> a
-   tail :: Cons a -> List a
-   null nil :: True
-   wizard :: DaggerOrStaff -> Wizard
-   add :: IntTerm -> IntTerm -> IntTerm
-   tnot :: BoolTerm -> BoolTerm 
-   eval :: Expr -> Value
+ true `and` false :: False
+ not . not $ true :: True
+ [true, true] :: [True]
+ [true, false] :: [Bool]
+ head :: Cons a -> a
+ tail :: Cons a -> List a
+ null nil :: True
+ wizard :: DaggerOrStaff -> Wizard
+ add :: IntTerm -> IntTerm -> IntTerm
+ tnot :: BoolTerm -> BoolTerm 
+ eval :: Expr -> Value
 \end{verbatim}
 
+\textbf{Implementation:} These and other examples implemented at
+\texttt{http://cs.unm.edu/\textasciitilde stelleg/subtypes}
+
 \end{block}
-\vspace{1cm}
+\vspace{0.5cm}
 \begin{block}{Related Work}
 \vspace{0.5cm}
-A brief, incomplete, and mostly wrong hierarchy of tools to define more precise
-types. 
+Informally in descending order in terms of expressive power:
 
-\vspace{0.5cm}
-\centering
+\begin{itemize}
+\item Dependent Types
+\item Refinement Types
+\item GADTs / Phantom Types
+\item OO Subtypes / Case Classes
+\item Polymorphic Variants
+\item {\color{red} Free Subtypes}
+\item Hindley Milner
+\end{itemize}
+\begin{comment}
+\begin{center}
 \begin{tikzpicture}[-, line width=1pt, auto, node distance=4cm]
 
-\node (0) at (0,0) {\color{red} Free Subtypes};
-\node (1) at (0,3) {Polymorphic Variants};
-\node (2) at (0,6) {GADTs / Phantom Types};
-\node (3) at (0,9) {Refinement Types};
-\node (4) at (0,12) {Dependent Types};
+\node (5) at (0,-4) {Hindley Milner};
+\node (0) at (0,-2) {\color{red} Free Subtypes};
+\node (6) at (0,0) {Polymorphic Variants};
+\node (1) at (0,2) {OO Subtypes / Case Classes};
+\node (2) at (0,4) {GADTs / Phantom Types};
+\node (3) at (0,6) {Refinement Types};
+\node (4) at (0,8) {Dependent Types};
 
-\path (0) edge node {} (1)
+\path (0) edge node {} (6)
+      (6) edge node {} (1)
       (1) edge node {} (2)
       (2) edge node {} (3)
-      (3) edge node {} (4);
+      (3) edge node {} (4)
+      (5) edge node {} (0);
 \end{tikzpicture}
+\end{center}
+\end{comment}
+
+\textbf{Big Picture}: Each approach represents a \emph{compromise}.
 
 \end{block}
-\vspace{1cm}
-\begin{block}{Drawbacks, Limitations, and Future Work}
+\vspace{1.5cm}
+\begin{block}{Limitations and Future Work}
 \vspace{0.5cm}
 \begin{itemize}
-\item Type composition: Needs impredicative types
-\item Type classes: Too polymorphic
-\item Recursive subtypes: can't write \verb!head . tail!
-\item Potential performance impacts (compile and run time)
-\item Ugly: No pattern matching, verbose data type declarations 
+\item Type composition: Needs impredicative types \textbf{*}
+\item Type classes: Too polymorphic \textbf{*}
+\item Potential performance impacts: Compile and run time \textbf{*}
+\item No pattern matching, verbose data type declarations \textbf{*}
+\item Readable types $\oplus$ Composable inference : \verb!  not :: Bool -> Bool!
+\item Recursive subtypes: Can't write \verb!head . tail!
 \end{itemize}
-\vspace{2cm}
+\textbf{* Compiler support can help.}
 \end{block}
 
 \end{column}
