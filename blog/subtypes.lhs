@@ -39,13 +39,14 @@ We can define logical `or` and `and`, leaving the types blank intentionally
 > if' (Bool c) a b = c a b
 >
 > not (Bool c) = c false true
-> or (Bool a) (Bool b) = Bool $ a true b 
-> and (Bool a) (Bool b) = Bool $ a b false
+> or (Bool a) b = a true b 
+> and (Bool a) b = a b false
 
 Some tests, showing us that GHC infers precise types
 
 > test1 = true `and` false :: False
-> test2 = true `and` true :: True
+> test2 = true `and` true  :: True
+> test3 = true `or` false  :: True
 
 We can create corresponding type for `Bool`
 
@@ -55,10 +56,6 @@ We can create corresponding type for `Bool`
 Indeed, GHC will infer this type if we force it to unify `True` and `False`:
 
 > g = [true, false] :: [Bool]
-
-Even fancier:
-
-> map
 
 Maybe 
 =====
@@ -232,12 +229,10 @@ and Bools. We show how we can implement it using subtypes
 >   (\b -> b)
 >   (\b -> not (evalTerm b))
 
-Krivine Machine
+Call by Name
 ===============
-The big step krivine machine is a good example of how to use subtypes to ensure
-the evaluation function will only return a value.  Unfortunately, it seems as
-though we need functioning impredicative types to implement the variable lookup
-function (the var rule is undefined).
+Another useful subtype is the value subtype of expressions. Here we use this
+subtype to define a big step evaluator.
 
 > newtype Expr' v l a e = Expr ((Int -> v) -> 
 >                               (Expr -> l) ->
@@ -246,7 +241,8 @@ function (the var rule is undefined).
 > type Expr = forall e. Expr' e e e e 
 > var :: Int -> Expr' v l a v
 > var i = Expr $ \v l a -> v i
-> lam :: Expr -> Expr' v l a l
+> type Value = forall v l a. Expr' v l a l
+> lam :: Expr -> Value
 > lam b = Expr $ \v l a -> l b
 > app :: Expr -> Expr -> Expr' v l a a
 > app m n = Expr $ \v l a -> a m n
@@ -257,20 +253,21 @@ function (the var rule is undefined).
 >   (\b -> 'λ':showExpr b)
 >   (\m n -> "(" ++ showExpr m ++ " " ++ showExpr n ++ ")")
 >
-> data Closure expr = forall e.Closure expr (List (Closure (Expr' e e e e)))
+> -- Subst i for e in e'
+> subst :: Int -> Expr -> Expr -> Expr
+> subst i e (Expr e') = e'
+>   (\j -> if j == i then e else var j)
+>   (\b -> lam $ subst (i+1) e b) 
+>   (\m n -> app (subst i e m) (subst i e n))
 >
-> eval :: (forall e.Expr' e e e e) -> Expr' v l a l
-> eval e = lam' where
->   lam' = case eval' (Closure e nil) of Closure lam'' _ -> lam''
->
-> eval' :: (forall e.Closure (Expr' e e e e)) -> Closure (Expr' v l a l)
-> eval' (Closure (Expr exp) env) = exp
->   (\i -> undefined) ---eval' $ index i env)
->   (\b -> Closure (lam b) env)
->   (\m n -> case eval' $ Closure m env of 
->     Closure (Expr lam') env' -> lam' 
+> eval :: Expr -> Value
+> eval (Expr exp) = exp
+>   (\i -> error "Expression not closed")
+>   (\b -> lam b)
+>   (\m n -> case eval m of 
+>     Expr v -> v
 >       (\i -> bottom) 
->       (\b -> eval' $ Closure b $ cons (Closure n env) env') 
+>       (\b -> eval $ subst 0 n b) 
 >       (\m n -> bottom))
 
 We also haven't *proved* that our constructors and types all match up. That is,
@@ -278,6 +275,4 @@ the type system has proved some things about them, but really we should be
 using parametricity to prove things like `Boolean` = {`true`, `false`}.
 
 
-[This post is a literate haskell file compiled by pandoc.](./hm_scott.lhs)
-
-[^terms-and-conditions]: Terms and conditions may apply. 
+[This post is a literate haskell file compiled by pandoc.](./subtypes.lhs)
