@@ -10,7 +10,6 @@ system) already has this capability that can be exercised by using Church or
 Scott encodings of simple data types.
 
 > {-# LANGUAGE RankNTypes #-}
-> {-# LANGUAGE ImpredicativeTypes #-}
 > {-# LANGUAGE GADTs #-}
 > import qualified Data.Maybe as M
 > import Prelude hiding (and, or, Maybe, Bool, map, not, null, head)
@@ -55,7 +54,7 @@ We can create corresponding type for `Bool`
 
 Indeed, GHC will infer this type if we force it to unify `True` and `False`:
 
-> g = [true, false] :: [Bool]
+> g = [true, false] :: [Bool' a a a]
 
 Maybe 
 =====
@@ -214,6 +213,7 @@ and Bools. We show how we can implement it using subtypes
 >    term)
 > type IntTerm = forall i ni. Term' i i ni ni i
 > type BoolTerm = forall b nb. Term' nb nb b b b
+> type Term t i b = Term' i i b b t
 > int :: Int -> IntTerm
 > int k = Term $ \i a b n -> i k
 > add :: IntTerm -> IntTerm -> IntTerm
@@ -222,7 +222,7 @@ and Bools. We show how we can implement it using subtypes
 > bool b' = Term $ \i a b n -> b b'
 > tnot :: BoolTerm -> BoolTerm
 > tnot b' = Term $ \i a b n -> n b'
-> evalTerm :: Term' Int Int (Bool' a a a) (Bool' a a a) t -> t
+> evalTerm :: Term t Int (Bool' a a a) -> t
 > evalTerm (Term t) = t 
 >   (\i -> i)
 >   (\a b -> evalTerm a + evalTerm b)
